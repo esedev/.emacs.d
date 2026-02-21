@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: src emacs config
+# key: src-emacs-conf
+# --
+#+name: $1
+#+begin_src emacs-lisp :results silent
+#+end_src

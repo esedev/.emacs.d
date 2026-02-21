@@ -1,0 +1,30 @@
+#+TITLE: README
+#+STARTUP: showall
+
+* Welcome!
+This is my personal Emacs configuration.
+Emacs 30 is required. The configuration uses several launch profiles for experimenting with *Emacs* configuration.
+
+* Installation
++ clone git repository
+  #+begin_src shell
+git clone https://github.com/esedev/.emacs.d.git
+   #+end_src
++ move repo to '~/.config/emacs' (*!WARGING: dont't forget make backup*)
++ copy emacs-runner.sh to /usr/lobal/bin (*optional*)
+  #+begin_src shell
+cp scripts/emacs-runner.sh /usr/local/bin/emax
+  #+end_src
++ add to ~/.bashrc (*optional*)
+        #+begin_src shell
+. "$HOME/.config/emacs/scripts/emacs-env"
+  #+end_src
+
+* Install packages
++ emacs setup-roles.el
++ =<M-x>= eval-buffer
+
+* Upgrade all packages
++ =<M-x>= package-list-packages
++ =<M-x>= package-refresh-contents
++ =<M-x>= package-upgrade-all

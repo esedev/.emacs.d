@@ -1,17 +1,23 @@
-# Compiled
-*.elc
+*
+!.gitignore
+!README.org
+!LICENSE
 
-# Packaging
-.cask/
-.eask/
-.eldev/
-.keg/
+!data
+!data/**
 
-# Built distribution
-dist/
+!profiles
+!profiles/*.el
 
-# Backup files
-*~
+!scripts
+!scripts/**
 
-# Undo-tree save-files
-*.~undo-tree
+!Config.org
+!early-init.el
+!init.el
+
+!save
+!save/.gitkeep
+
+!target
+!target/.gitkeep
