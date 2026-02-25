@@ -2,6 +2,17 @@
 ;;; Commentary:
 
 ;;; Code:
+
+;;; debug
+(when init-file-debug
+  (trace-function 'require)
+  (trace-function 'load)
+  ;; (trace-function 'package-initialize)
+  ;; (trace-function 'custom-initialize-reset)
+  ;; (require 'edebug)
+  ;; (edebug-trace "CFG: start early-init.el")
+  )
+
 ;;; processing extended command line arguments with '--u-' prefix
 (when t
   (require 'cl-seq)
@@ -31,7 +42,7 @@
 (defun cfg/path-s (arg)
   (expand-file-name (format "save/%s" arg) user-emacs-directory))
 (defun cfg/path-t (arg)
-  (expand-file-name (format "target/%s" arg) user-emacs-directory))
+  (expand-file-name (format "target/%s/%s" cfg/profile arg) user-emacs-directory))
 
 (defun cfg/set-title-tail (arg)
   "Set value `cfg/title-tail' as ARG."
@@ -44,21 +55,21 @@
         (:eval (if tab-bar-mode
                 (concat " ___/ " (cdr (assq 'name (tab-bar--current-tab))) " \\___ ") ""))
          "<"cfg/title ">" cfg/title-tail))
-;;; environment
-(setq package-user-dir
-      (cond ((eq cfg/profile 'built-in) "/tmp/emacs-elpa")
-            (t (cfg/path-t "elpa"))))
+;;;;; environment
+(setq package-user-dir (cfg/path-t "elpa"))
 (when (boundp 'native-comp-eln-load-path) ; set eln-cache dir
   (startup-redirect-eln-cache (cfg/path-t "eln-cache")))
-; performance
+;;;;; performance
 (setq gc-cons-threshold (* 50 1024 1024)
       gc-cons-percentage 0.6)
-; using a custom file
+;;;;; using a custom file
 (setq custom-file (cfg/path-s (format "emacs-custom--%s.el" cfg/profile)))
 (when (file-exists-p custom-file) (load custom-file))
 
+;;;;; override custom
 (custom-set-variables
  '(auto-save-default nil)
+ '(auto-save-list-file-prefix (cfg/path "target/tmp-auto-save-list/.saves-"))
  '(create-lockfiles nil)
  '(make-backup-files nil)
  '(recentf-mode t) ; use the M-x recentf-open-files command
@@ -84,34 +95,7 @@
 ;;  '(custom-safe-themes t)
  '(visible-bell t)) ; no blink please
 
-;;;
-;;; bind--override-standard
-;;;
-(defun cfg/bind--override-standard ()
-  "Rebind standard bindings"
-  (keymap-global-unset "C-x C-c")       ; save-buffers-kill-terminal
-  (keymap-global-set "C-x x c" 'save-buffers-kill-terminal) ; close emacs
-  ;; (keymap-global-set "C-x C-c" (lambda () (interactive) (message "<C-x C-c> rebind to <C-x x c>")))
-  (keymap-global-set "C-x C-c" 'kmacro-keymap) ; release <C-x C-k>
-  (keymap-global-set "C-x C-k" 'kill-current-buffer) ;
-;;; <C-;> && <C-'> && <C-,> don't working in terminal
-;;; <C-/> readed like <C-_>
-  (keymap-global-unset "C-z")         ; suspend-frame + <C-x C-z>
-  (keymap-global-unset "C-?")         ; undo-redo == <C-S-z> + <C-M-_>
-  (keymap-global-unset "C-/")         ; undo == <C-z> + <C-_>
-  (keymap-global-unset "M-/")         ; dabbrev-expand
-  (keymap-global-unset "C-x ;")       ; comment-set-column
-  (keymap-global-unset "C-x C-;")     ; comment-line == <C-/>
-  (keymap-global-unset "M-;")         ; comment-dwim == <M-/>
-  (keymap-global-set "C-z" 'undo)     ;
-  (keymap-global-set "C-S-z" 'undo-redo)  ; also <C-M-_> (in terminal)
-  (keymap-global-set "C-/" 'comment-line) ; short comment line
-  (keymap-global-set "M-/" 'comment-dwim) ; comment endline
-  (keymap-global-set "M-;" 'dabbrev-expand) ; expand previous word "dynamically"
-
-  (keymap-global-set "C-x !" 'shrink-window)
-  )
-(cfg/bind--override-standard)
-
+;; (load (cfg/path (format "profiles/profile-%s-early" cfg/profile)) 'no-error)
+;; (setq package-enable-at-startup nil)
 (provide 'early-init)
 ;;; early-init.el ends here

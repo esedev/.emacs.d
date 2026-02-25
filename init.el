@@ -5,56 +5,71 @@
 ;;; Code:
 (when (< emacs-major-version 30)
   (error "Minimum required Emacs version 30, current %s" emacs-major-version))
-
-;;; begin of configure package manager
-(require 'package)
-(setq package-archives '(("gnu" . "https://elpa.gnu.org/packages/")
-                         ("nongnu" . "https://elpa.nongnu.org/nongnu/")
-                         ("melpa-stable" . "https://stable.melpa.org/packages/")
-                         ("melpa" . "https://melpa.org/packages/"))
-      package-archive-priorities '(("gnu" . 10)
-                                   ("nongnu" . 8)
-                                   ("melpa-stable" . 5)
-                                   ("melpa" . 1))
-      )
 (eval-when-compile
   (require 'use-package))
-(when (eq 'built-in cfg/profile)
-  (setq package-archives nil))
+;;;;; begin of configure package manager
+(use-package package
+  :ensure nil
+  :custom
+  (package-native-compile t)
+  (package-archives '(("gnu"   . "https://elpa.gnu.org/packages/")
+                      ("nongnu" . "https://elpa.nongnu.org/nongnu/")
+                      ("melpa-stable" . "https://stable.melpa.org/packages/")
+                      ("melpa" . "https://melpa.org/packages/")))
+  (package-archive-priorities '(("gnu" . 10) ("nongnu" . 9)
+                                ("melpa-stable" . 7) ("melpa" . 1)))
+  :config
+  ;; (package-initialize)
+  (when (eq cfg/profile 'built-in)
+      (setq package-archives nil)))
 (use-package use-package
-  ;; :custom
+  :ensure nil
+  :custom
   ;; (use-package-always-defer t)
-  ;; (use-package-verbose t)
-  ;; (use-package-minimum-reported-time 0.005)
-  )
-;;; end of configure package manager
+  (use-package-minimum-reported-time 0.005)
+  (use-package-verbose nil))
+;;;;; end of configure package manager
 
 ;;;
-;;; role--initialize
+;;; role--built-in--init
 ;;;
-(defmacro use-feature (name &rest args)
-  "Like `use-package' but accounting for asynchronous installation.
-NAME and ARGS are in `use-package'."
-  (declare (indent defun))
-  `(use-package ,name
-     :ensure nil
-     ,@args))
-(defmacro use-feature-site (name &rest args)
-  "Like `use-package' but accounting for asynchronous installation.
-NAME and ARGS are in `use-package'."
-  (declare (indent defun))
-  `(use-package ,name
-     :if (require ',name nil 'noerror)
-     :ensure nil
-     ,@args))
-
 (use-package emacs
   :init
-  (defun cfg/yard (arg) (expand-file-name (or arg "") "~/sync/yard"))
-  (defun cfg/shelf (arg) (expand-file-name (or arg "") "~/sync/shelf"))
+  (defun cfg/yard (&optional arg) (expand-file-name (or arg "") "~/sync/yard"))
+  (defun cfg/shelf (&optional arg) (expand-file-name (or arg "") "~/sync/shelf"))
   (defun cfg/display-startup-time ()
     (message "Emacs loaded in %s seconds with %d garbage collections."
              (emacs-init-time "%.2f") gcs-done))
+
+  ;;;
+  ;;; bind--override-standard
+  ;;;
+  (defun cfg/bind--override-standard ()
+    "Rebind standard bindings"
+    (keymap-global-unset "C-x C-c")       ; save-buffers-kill-terminal
+    (keymap-global-set "C-x x c" 'save-buffers-kill-terminal) ; close emacs
+    ;; (keymap-global-set "C-x C-c" (lambda () (interactive) (message "<C-x C-c> rebind to <C-x x c>")))
+    (keymap-global-set "C-x C-c" 'kmacro-keymap) ; release <C-x C-k>
+    (keymap-global-set "C-x C-k" 'kill-current-buffer) ;
+  ;;; <C-;> && <C-'> && <C-,> don't working in terminal
+  ;;; <C-/> readed like <C-_>
+    (keymap-global-unset "C-z")         ; suspend-frame + <C-x C-z>
+    (keymap-global-unset "C-?")         ; undo-redo == <C-S-z> + <C-M-_>
+    (keymap-global-unset "C-/")         ; undo == <C-z> + <C-_>
+    (keymap-global-unset "M-/")         ; dabbrev-expand
+    (keymap-global-unset "C-x ;")       ; comment-set-column
+    (keymap-global-unset "C-x C-;")     ; comment-line == <C-/>
+    (keymap-global-unset "M-;")         ; comment-dwim == <M-/>
+    (keymap-global-set "C-z" 'undo)     ;
+    (keymap-global-set "C-S-z" 'undo-redo)  ; also <C-M-_> (in terminal)
+    (keymap-global-set "C-/" 'comment-line) ; short comment line
+    (keymap-global-set "M-/" 'comment-dwim) ; comment endline
+    (keymap-global-set "M-;" 'dabbrev-expand) ; expand previous word "dynamically"
+  
+    (keymap-global-set "C-x !" 'shrink-window)
+    )
+  (cfg/bind--override-standard)
+
   ;;;
   ;;; code--my-actions
   ;;;
@@ -138,6 +153,7 @@ NAME and ARGS are in `use-package'."
    '(delete-selection-mode t)
    '(global-auto-revert-mode t) ; autoreload file from disk if changed
    '(global-auto-revert-non-file-buffers t)
+   '(auto-revert-interval 1)
    '(history-length 25) ; save what you enter into minibuffer prompts
    '(history-delete-duplicates t)
    '(require-final-newline t)
@@ -192,22 +208,23 @@ NAME and ARGS are in `use-package'."
        (40 . 41)
        (91 . 93)
        (123 . 125))))
-  (setq major-mode-remap-alist
-   '((yaml-mode . yaml-ts-mode)
-     (bash-mode . bash-ts-mode)
-     (js2-mode . js-ts-mode)
-     (typescript-mode . typescript-ts-mode)
-     (json-mode . json-ts-mode)
-     (css-mode . css-ts-mode)
-     (python-mode . python-ts-mode)
-     (ruby-mode . ruby-ts-mode)
-     (rust-mode . rust-ts-mode)))
 
+  (user-trmap-mode 1)
+  :hook ((prog-mode . hs-minor-mode)     ; folding code
+         (emacs-startup . cfg/display-startup-time))
   :config
+  (setq major-mode-remap-alist
+        '((bash-mode . bash-ts-mode)
+          (css-mode . css-ts-mode)
+          (js2-mode . js-ts-mode)
+          (json-mode . json-ts-mode)
+          (typescript-mode . typescript-ts-mode)
+          (python-mode . python-ts-mode)
+          (yaml-mode . yaml-ts-mode)))
+
   (when (display-graphic-p (selected-frame))
     (setopt cursor-type 'hollow))
-  (add-hook 'emacs-startup-hook #'cfg/display-startup-time)
-  (user-trmap-mode 1))
+  )
 ;;;
 ;;; thms--initialize
 ;;;
@@ -240,7 +257,9 @@ NAME and ARGS are in `use-package'."
       (load-theme (or (alist-get theme cfg/theme-tags) theme) no-confirm no-enable)))
   :config
   (unless (member cfg/profile '(built-in devel))
-    (use-feature-site ef-themes
+    (use-package ef-themes
+      :ensure nil
+      :if (package-installed-p 'ef-themes)
       :config
       (setq cfg/theme-tags '((Craft . ef-maris-dark)
                              (Night . ef-night)
@@ -251,14 +270,13 @@ NAME and ARGS are in `use-package'."
                                      (alist-get cfg/profile cfg/theme-profile-tags)
                                      'None)) t))
 
-(let ((fname (cfg/path "data/help-quick-custom.el")))
-  (when (file-exists-p fname) (load fname)))
-
 ;;; load profile
 (load (cfg/path (format "profiles/profile-%s" cfg/profile)))
 
+(load (cfg/path "data/help-quick-custom"))
+
 ;;; deferred activations
-(which-key-mode)
+;; (which-key-mode)
 
 (provide 'init)
 ;;; init.el ends here

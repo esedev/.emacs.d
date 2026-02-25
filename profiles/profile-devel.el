@@ -33,29 +33,9 @@
 ;;;
 ;;; role--built-in--core
 ;;;
-(use-package dired
-  :delight "Dir"
-  :custom
-  (dired-kill-when-opening-new-dired-buffer t)
-  ;; (dired-omit-files "^\\..*$") ; Omit the dotfiles
-  ;; (dired-omit-files "^\\.$" )
-  (dired-isearch-filenames 'dwim)
-  (dired-recursive-copies 'always)
-  (dired-recursive-deletes 'always)
-  (dired-listing-switches "-aluFh --group-directories-first -I .")
-  (dired-dwim-target t)
-  (delete-by-moving-to-trash t)
-  ;; Auto refresh Dired, but be quiet about it
-  (global-auto-revert-non-file-buffers t)
-  (auto-revert-verbose nil)
-  :hook
-  (dired-mode . dired-hide-details-mode)
-  (dired-mode . auto-revert-mode)
-  ;; (dired-mode . dired-omit-mode) ; <C-x M-o> - toggle dired-omit-mode
-  :config
-  (put 'dired-find-alternate-file 'disabled nil))
 (use-package emacs
-  :init
+  :ensure nil
+  :preface
   (defvar-keymap cfg/kmap-open-config :full t
     :doc "Config"
     "1" '("Config" . (lambda () (interactive) (find-file (cfg/path "Config.org"))))
@@ -88,15 +68,23 @@
     :doc "View changes."
     "T" '("load theme" . cfg/load-theme)
     "t" '("switch theme" . cfg/switch-theme))
+  ;; Craft IDE menu
+  (defvar-keymap cfg/kmap-craft-menu
+    :doc "My craft menu on short hand."
+    "?" '("help" . (lambda () (interactive) (find-file (cfg/path-s "jotting.org"))))
+    )
+  ;; Minor user menu
   (defvar-keymap cfg/kmap-minor-menu
     :doc "My minor menu on short hand."
-    "t" '("tab switch" . tab-switcher)
+    "s" '("tab switcher" . tab-switcher)
+    "t" '("treemacs" . treemacs)
     "C-e" '("w-right" . windmove-right)
     "C-f" '("w-right" . windmove-right)
     "C-a" '("w-left" . windmove-left)
     "C-b" '("w-left" . windmove-left)
     "C-p" '("w-up" . windmove-up)
     "C-n" '("w-down" . windmove-down))
+  ;; Major user menu
   (defvar-keymap cfg/kmap-major-menu
     :doc "My main menu on long hand."
     "c" `("configure" . ,cfg/kmap-open-config)
@@ -106,17 +94,26 @@
     "k" '("kill less" . killless-mode)
     "C-c" '("close emacs" .  save-buffers-kill-terminal)
     "<f12>" `("shelf" . ,cfg/kmap-user-shelf))
+  ;;
+  (keymap-set global-map "C-." cfg/kmap-craft-menu)
   (keymap-set global-map "C-;" cfg/kmap-minor-menu)
   (keymap-set global-map "<f12>" cfg/kmap-major-menu)
-  (defun cfg/display-startup-time ()
-    (message "Emacs loaded in %s seconds with %d garbage collections."
-             (emacs-init-time "%.2f") gcs-done))
-  (add-hook 'emacs-startup-hook #'cfg/display-startup-time)
+
+  :init
+  (defun cfg//ido-mode-setup ()
+    (ido-mode 1)
+    (setf (nth 2 ido-decorations) "\n")
+    (setq ido-enable-flex-matching t) ; show any name that has the chars you typed
+    (setq ido-default-file-method 'selected-window) ; use current pane for newly opened file
+    (setq ido-default-buffer-method 'selected-window) ; use current pane for newly switched buffer
+    (setq max-mini-window-height 0.5) ; big minibuffer height, for ido to show choices vertically
+    )
   )
 
 (use-package desktop
+  :ensure nil
   :custom
-  (desktop-dirname user-emacs-directory "Каталог для хранения файла .desktop.")
+  (desktop-dirname (cfg/path-s "desktop") "Каталог для хранения файла .desktop.")
   ;; (desktop-load-locked-desktop t "Загрузка файла .desktop даже если он заблокирован.")
   (desktop-restore-frames t "Восстанавливать фреймы.")
   (desktop-save t "Сохранять список открытых буферов, файлов и т. д. без лишних вопросов.")
@@ -125,8 +122,31 @@
   ;; (desktop-save-mode t)
   ;; (add-to-list 'delete-frame-functions 'desktop-save)
   (add-to-list 'desktop-modes-not-to-save 'dired-mode))
+(use-package dired
+  :ensure nil
+  :delight "Dir"
+  :custom
+  (dired-kill-when-opening-new-dired-buffer t)
+  ;; (dired-omit-files "^\\..*$") ; Omit the dotfiles
+  ;; (dired-omit-files "^\\.$" )
+  (dired-isearch-filenames 'dwim)
+  (dired-recursive-copies 'always)
+  (dired-recursive-deletes 'always)
+  (dired-listing-switches "-aluFh --group-directories-first -I .")
+  (dired-dwim-target t)
+  (delete-by-moving-to-trash t)
+  ;; Auto refresh Dired, but be quiet about it
+  (auto-revert-verbose nil)
+  :hook
+  (dired-mode . dired-hide-details-mode)
+  (dired-mode . auto-revert-mode)
+  ;; (dired-mode . dired-omit-mode) ; <C-x M-o> - toggle dired-omit-mode
+  :config
+  (put 'dired-find-alternate-file 'disabled nil))
 (use-package eww
-  :init
+  :ensure nil
+  :defer t
+  :preface
   (defun eww-render-buffer ()
     "Render the current buffer in EWW."
     (interactive)
@@ -146,30 +166,11 @@
               `("Поиск в сети" .
                 (lambda ()(interactive)(eww "https://lite.duckduckgo.com"))))
   )
-(use-package flymake
-  :init
-  ;; Manually re-enable Eglot's Flymake backend
-  (defun manually-activate-flymake ()
-    (add-hook 'flymake-diagnostic-functions #'eglot-flymake-backend nil t)
-    (flymake-mode 1))
-  :custom
-  (flymake-no-changes-timeout 1.2)
-  :hook((emacs-lisp-mode . flymake-mode)
-        (ruby-ts-mode . flymake-mode)))
-(use-package eglot
-  :init
-  (defvar-keymap cfg/kmap-eglot
-    :doc "lsp eglot."
-    :name "Eglot menu"
-    "F" '("format" . eglot-format)
-    "f" '("quic fix" . eglot-code-action-quickfix)
-    "r" '("rename" . eglot-rename)
-    "<f12>" '("run eglot" . eglot-ensure))
-  (keymap-set cfg/kmap-minor-menu "e" cfg/kmap-eglot)
-  :bind (("C-." . eglot-code-action-quickfix))
-  :custom
-  (eglot-autoshutdown t))
 (use-package org
+  :ensure nil
+  :pin manual
+  :defer t
+  :hook  (org-mode . u-hook--org-mode-setup)
   :init
   (defun u-hook--org-mode-setup ()
     "Minor modes tunning."
@@ -196,11 +197,12 @@
    '((sequence "TODO(t)" "WORK(g)" "WAIT(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")))
   ;; agenda
   (org-agenda-files (list (concat org-directory "/agenda")))
+  (org-confirm-babel-evaluate nil)
   :config
   (add-to-list 'org-src-lang-modes
                (cons "D" 'd)
                (cons "conf-unix" 'conf-unix))
-  (setq org-confirm-babel-evaluate nil)
+  ;; (setq org-confirm-babel-evaluate nil)
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((emacs-lisp . t)
@@ -208,9 +210,13 @@
      (shell . t)
      (ruby . t)
      (python . t)))
-  :hook
-  (org-mode . u-hook--org-mode-setup))
-(use-feature ruby-ts-mode
+  (which-key-add-key-based-replacements "C-c o" "Org")
+  (which-key-add-major-mode-key-based-replacements 'org-mode
+    "C-c \"" "Org plot" ; \"
+    "C-c C-v" "Org babel"
+    "C-c C-x" "Org X"))
+(use-package ruby-ts-mode
+  :ensure nil
   :delight "R✧by"
   :mode "\\.rb\\'"
   :mode "config.ru\\'"
@@ -224,13 +230,8 @@
   :hook (ruby-base-mode . subword-mode)
   :custom (ruby-indent-level 2)
           (ruby-indent-tabs-mode nil))
-(use-package rust-ts-mode
-  :delight "R✧st"
-  :mode "\\.rs\\'"
-  :hook
-  (rust-ts-mode . eglot-ensure)
-  )
 (use-package term
+  :ensure nil
   :commands term
   :config
   ;; Match the default Bash shell prompt.  Update this if you have a custom prompt
@@ -238,9 +239,11 @@
   ;; (setq explicit-shell-file-name "bash") ; Change this to zsh, etc
   (setq term-prompt-regexp "^[^#$%>\n]*[#$%>λ] *"))
 (use-package which-key
+  :ensure nil
   :delight
+  :hook (emacs-startup . which-key-mode)
   :config
-  (setq which-key-idle-delay 0.6)
+  (setq which-key-idle-delay 0.4)
   (setq which-key-idle-secondary-delay 0.05)
   (setq which-key-min-display-lines 4)
 
@@ -249,14 +252,9 @@
   ;; (add-to-list 'which-key-replacement-alist '(("DEL" . nil) . ("⇤" . nil)))
   ;; (add-to-list 'which-key-replacement-alist '(("SPC" . nil) . ("␣" . nil)))
 
-  (which-key-add-key-based-replacements "C-; e" "Eglot")
-  (which-key-add-key-based-replacements "C-c &" "Yas")
-  (which-key-add-key-based-replacements "C-c o" "Org")
+  (which-key-add-key-based-replacements "C-c @" "ShowHide")
   (which-key-add-key-based-replacements "C-c e" "IDE")
-  (which-key-add-major-mode-key-based-replacements 'org-mode
-    "C-c \"" "Org plot" ; \"
-    "C-c C-v" "Org babel"
-    "C-c C-x" "Org X")
+
   (which-key-add-major-mode-key-based-replacements 'rust-mode
     "C-c C-c" "Rust")
   (which-key-add-key-based-replacements "C-c p" "Cape")
@@ -272,6 +270,7 @@
   (which-key-add-key-based-replacements "C-x 8" '("unicode" . "Unicode keys"))
   (which-key-add-key-based-replacements "C-x 8 e" "emoji"))
 (use-package whitespace
+  :ensure nil
   :config
   (setq whitespace-display-mappings
         '((space-mark 32
@@ -288,209 +287,12 @@
                     [92 9])))
   ;; delete trailing whitespaces when save buffer
   (add-to-list 'write-file-functions 'delete-trailing-whitespace))
-(use-feature-site auto-complete)
-(use-feature-site company-mode
-  :delight "CompAny"
-  :hook
-  (rust-ts-mode . company-mode)
-  )
-(use-feature-site dockerfile-mode
-  :init
-  (defun cfg/test ()
-    "NO DOC"
-    (interactive)
-    (message "TEST IS SUCCESSFULLY!!!")))
-
-(use-feature-site magit
-  :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
-(use-feature-site yaml-mode)
-
 ;;;
-;;; role--cozy-editor
+;;; role--navi--vertico
 ;;;
-(use-package hydra ; short bindings with a common prefix (GNU)
-  :demand t
-  :config
-  (defhydra hydra--toggle-mode (:hint nil)
-    "
-    ^
-    ^Toggle^   ^Emacs^              ^Ui^               ^Editor^
-    ^------^---^-----^--------------^--^---------------^------^---
-    _q_ quit   _h_ highlight line   _f_ fontaine       _m_ menu
-    ^^         _l_ long line wrap   _g_ golden ratio   _t_ tab headers
-    _U_ ⌘      _w_ whitespaces      _o_ org modern     _W_ Win tabs
-    _k_ ⛨ ^^                        _p_ paddings
-    "
-    ("q" nil)
-  
-    ("h" global-hl-line-mode)
-    ("l" visual-line-mode)
-    ("w" whitespace-mode)
-  
-    ;; ("f" fontaine-set-preset)
-    ("f" fontaine-mode)
-    ("g" golden-ratio-mode)
-    ("o" org-modern-mode)
-    ("p" spacious-padding-mode)
-  
-    ("m" menu-bar-mode)
-    ("t" u--toggle-tab-bar-headers-visible)
-    ("W" tab-line-mode)
-  
-    ("U" user-trmap-mode)
-    ("k" killless-mode))
-  (defhydra hydra--text-scale(:timeout 10)
-    "scale text"
-    ("i" text-scale-increase "in")
-    ("k" text-scale-decrease "out")
-    ("q" nil "finished", :exit t))
-  (defhydra hydra--window-move(:hint nil)
-    "
-    ^Window^   ^Manual^         ^Auto^             ^Navigation^
-    ^------^---^------^---------^----^-------------^----------^^^^^^-
-    _q_ quit   _I_ ↑ increase   _-_ by buffer      ^    _p_
-    ^^         _K_ ↓ decrease   _+_ balance          _a_ ✦ _f_
-    ^^         _J_ → shrink ←   _g_ golden ratio   ^    _n_
-    ^^         _L_ ← expand →   ^^                 ^----------^^^^^^-
-    "
-    ("I" enlarge-window nil)
-    ("K" shrink-window nil)
-    ("J" shrink-window-horizontally nil)
-    ("L" enlarge-window-horizontally nil)
-    ("-" shrink-window-if-larger-than-buffer nil)
-    ("+" balance-windows nil)
-    ("=" balance-windows nil)
-    ("g" golden-ratio)
-    ("a" windmove-left nil)
-    ("b" windmove-left nil)
-    ("p" windmove-up nil)
-    ("n" windmove-down nil)
-    ("f" windmove-right nil)
-    ("e" windmove-right nil)
-    ("C-a" windmove-left nil)
-    ("C-b" windmove-left nil)
-    ("C-p" windmove-up nil)
-    ("C-n" windmove-down nil)
-    ("C-f" windmove-right nil)
-    ("C-e" windmove-right nil)
-    ("q" nil)
-    )
-  (defhydra hydra--play-games (:hint nil :color blue)
-    "
-    ^
-      ^Games
-      ^-------------
-      _!_ happy birthday
-      _D_ dunnet
-      _g_ gomoku
-      _l_ life
-      _m_ mines
-      _M_ mpuz
-      _s_ snake
-      _t_ solitaire
-      _z_ zone
-      _d_ doctor
-  
-      _q_ quit
-      ^-------------
-      "
-    ("!" animate-birthday-presint)
-    ("D" dunnet)
-    ("g" gomoku)
-    ("l" life)
-    ("m" mines)
-    ("M" mpuz)
-    ("s" snake)
-    ("t" solitaire)
-    ("z" zone)
-    ("d" doctor)
-    ("q" nil :color pink)
-  )
-  (defhydra hydra-helper--buf-move()
-    "move buffer"
-    ("s" buf-move-left "left")
-    ("e" buf-move-up "up")
-    ("d" buf-move-down "down")
-    ("f" buf-move-right "right")
-    ("SPC" nil "finished", :exit t))
-  
-  (keymap-set cfg/kmap-update-ui "C-t" '("text scale" . hydra--text-scale/body))
-  (keymap-set cfg/kmap-update-ui "w" '("window move" . hydra--window-move/body))
-  (keymap-set cfg/kmap-major-menu "g" '("games" . hydra--play-games/body))
-  (keymap-set cfg/kmap-major-menu "t" '("toggle" . hydra--toggle-mode/body))
-  
-  (keymap-global-set "M-O" 'hydra--window-move/body); window move
-)
-(use-package ace-window
-  :config
-  (keymap-global-set "M-o" 'ace-window)
-  (setq aw-dispatch-always t)
-  )
-(use-package delight)
-(use-package golden-ratio ; auto resize window by golden ratio
-  ;; :hook (after-init . golden-ratio-mode)
-  :custom
-  (golden-ratio-exclude-modes '(occur-mode)))
-(use-package move-text
-  :demand t
-  :config (move-text-default-bindings))
-(use-package rainbow-mode ; colorize color names in buffers
-  ;; :delight
-  :hook (prog-mode . rainbow-mode))
-(use-package rainbow-delimiters                ; highlight brackets according
-  :hook (prog-mode . rainbow-delimiters-mode)) ; to their depth
-(use-package xclip ; copy/paste in terminal
-  :demand t
-  :unless (display-graphic-p)
-  :config (xclip-mode 1))
-(use-package csv-mode
-  :mode "\\.[Cc][Ss][Vv]\\'")
-(use-package dockerfile-mode )
-(use-package just-mode )
-(use-package yaml-mode
-  :mode "\\.ya?ml\\'"
-  :hook
-  (yaml-mode . highlight-indentation-mode)
-  :bind
-  (:map
-   yaml-mode-map
-   (">" . nil)))
-(use-package emms) ; emacs multimedia service
-;; (use-package gt)   ; language translator
-(use-package tmr   ; timers
-  :init
-  (keymap-set cfg/kmap-open-entities "t" '("timers" . tmr-tabulated-view))
-  :config
-  (setq tmr-sound-file (cfg/path "data/sound/alert.ogg"))
-  )
-(use-package markdown-mode
-  :commands (markdown-mode gfm-mode)
-  :mode
-  ("README.*\\.md\\'" . gfm-mode)
-  ("\\.md\\'" . markdown-mode)
-  ("\\.markdown\\'" . markdown-mode)
-  :hook
-  (markdown-mode . variable-pitch-mode)
-  (markdown-mode . yas-minor-mode)
-  :custom
-  (markdown-command "pandoc")
-  (markdown-header-scaling t)
-  :config
-  (unbind-key "DEL" gfm-mode-map))
-(use-package yasnippet
-  :delight (yas-minor-mode " Ya")
-  :init
-  (use-package yasnippet-snippets :after yasnippet)
-  :config
-  (setq yas-snippet-dirs
-      (list (cfg/path "data/snippets") ; personal snippets
-            yasnippet-snippets-dir
-        ))
-  (yas-reload-all)
-  :hook ((prog-mode LaTeX-mode org-mode markdown-mode) . yas-minor-mode))
-;;; role--completion-navigation
 (use-package cape
+  :ensure t
+  :pin gnu
   ;; Bind dedicated completion commands
   ;; Alternative prefix keys: C-c p, M-p, M-+, ...
   :bind (("C-c p p" . completion-at-point) ;; capf
@@ -532,6 +334,8 @@
 )
 ;; Example configuration for Consult
 (use-package consult
+  :ensure t
+  :pin gnu
   ;; Replace bindings. Lazily loaded due by `use-package'.
   :bind (;; C-c bindings in `mode-specific-map'
 	 ("C-c M-x" . consult-mode-command)
@@ -645,6 +449,8 @@
   ;; (setq consult-project-function nil)
 )
 (use-package corfu
+  :ensure t
+  :pin gnu
   :custom
   (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
   (corfu-auto t)                 ;; Enable auto completion
@@ -668,16 +474,14 @@
   :init
   (global-corfu-mode))
 (use-package embark
+  :ensure t
+  :pin gnu
   :bind (("C-h B" . embark-bindings)
          :map cfg/kmap-major-menu
          ("a" . embark-act)
          :map cfg/kmap-minor-menu
          ("M-;" . embark-dwim))
-  ;; (("<f12> a" . embark-act)         ;; pick some comfortable binding
-  ;;  ("C-; M-;" . embark-dwim)        ;; good alternative: M-.
-  ;;  ) ;; alternative for `describe-bindings'
   :init
-
   ;; Optionally replace the key help with a completing-read interface
   (setq prefix-help-command #'embark-prefix-help-command)
 
@@ -698,49 +502,445 @@
 		 nil
 		 (window-parameters (mode-line-format . none)))))
 (use-package embark-consult
+  :ensure t
+  :pin gnu
+  :requires (embark consult)
+  :after (embark consult)
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
 (use-package marginalia
+  :ensure t
+  :pin gnu
   :config
-  (marginalia-mode))
+  (marginalia-mode 1))
 (use-package orderless
+  :ensure t
+  :pin gnu
   :custom
   (completion-styles '(orderless basic))
   (completion-category-defaults nil)
   (completion-category-overrides '((file (styles basic partial-completion)))))
 (use-package vertico
+  :ensure t
+  :init
+  (use-package vertico-multiform
+    :ensure nil
+    :after vertico
+    :config
+    (setq vertico-multiform-categories
+          '((file grid reverse)
+            (consult-location buffer)
+            (consult-grep buffer)
+            (minor-mode reverse)
+            (imenu buffer)
+            (t unobtrusive)))
+    :hook (after-init . vertico-multiform-mode))
   :config
   ;; Different scroll margin
   ;; (setq vertico-scroll-margin 0)
   ;; Show more candidates
-  (setq vertico-count 10)
+  (setq vertico-count 12)
   ;; Grow and shrink the Vertico minibuffer
   (setq vertico-resize t)
   ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
   (setq vertico-cycle t)
   (keymap-set vertico-map "C-l" #'vertico-exit)
   (vertico-mode 1))
-(use-package vertico-multiform
+(use-package vertico-posframe
+  :ensure t
+  :preface
+  (use-package posframe :ensure t)
+  :requires (vertico posframe)
   :after vertico
+  :custom
+  (vertico-posframe-parameters '((left-fringe . 8) (right-fringe . 8)))
   :config
-  ;; (setq vertico-multiform-categories
-  ;;       '((file grid reverse)
-  ;;         (consult-location buffer)
-  ;;         (consult-grep buffer)
-  ;;         (minor-mode reverse)
-  ;;         (imenu buffer)
-  ;;         (t unobtrusive)))
   (setq vertico-multiform-commands '(
                                      (consult-line (:not posframe))
                                      ;; (gopar/consult-line (:not posframe))
                                      ;; (consult-ag (:not posframe))
                                      (t posframe)))
-  :hook (after-init . vertico-multiform-mode))
-(use-package vertico-posframe
-  :after vertico
+  (vertico-posframe-mode 1))
+;;;
+;;; role--emacs
+;;;
+;;;;; cozy
+(use-package hydra ; short bindings with a common prefix (GNU)
+  :ensure t
+  :pin gnu
+  :demand t
+  :config
+  (defhydra hydra--toggle-mode (:hint nil)
+    "
+    ^
+    ^Toggle^   ^Emacs^              ^Ui^               ^Editor^
+    ^------^---^-----^--------------^--^---------------^------^---
+    _q_ quit   _h_ highlight line   _f_ fontaine       _m_ menu
+    ^^         _l_ long line wrap   _g_ golden ratio   _t_ treemacs
+    _U_ ⌘      _w_ whitespaces      _o_ org modern     _T_ tab headers
+    _k_ ⛨ ^^                        _p_ paddings       _W_ Win tabs
+    "
+    ("q" nil)
+  
+    ("h" global-hl-line-mode)
+    ("l" visual-line-mode)
+    ("w" whitespace-mode)
+  
+    ;; ("f" fontaine-set-preset)
+    ("f" fontaine-mode)
+    ("g" golden-ratio-mode)
+    ("o" org-modern-mode)
+    ("p" spacious-padding-mode)
+  
+    ("m" menu-bar-mode)
+    ("t" treemacs)
+    ("T" u--toggle-tab-bar-headers-visible)
+    ("W" tab-line-mode)
+  
+    ("U" user-trmap-mode)
+    ("k" killless-mode))
+  (defhydra hydra--text-scale(:timeout 10)
+    "scale text"
+    ("i" text-scale-increase "in")
+    ("k" text-scale-decrease "out")
+    ("q" nil "finished", :exit t))
+  (defhydra hydra--window-move(:hint nil)
+    "
+    ^Window^   ^Manual^         ^Auto^             ^Navigation^
+    ^------^---^------^---------^----^-------------^----------^^^^^^-
+    _q_ quit   _I_ ↑ increase   _-_ by buffer      ^    _p_
+    ^^         _K_ ↓ decrease   _+_ balance          _a_ ✦ _f_
+    ^^         _J_ → shrink ←   _g_ golden ratio   ^    _n_
+    ^^         _L_ ← expand →   ^^                 ^----------^^^^^^-
+    "
+    ("I" enlarge-window nil)
+    ("K" shrink-window nil)
+    ("J" shrink-window-horizontally nil)
+    ("L" enlarge-window-horizontally nil)
+    ("-" shrink-window-if-larger-than-buffer nil)
+    ("+" balance-windows nil)
+    ("=" balance-windows nil)
+    ("g" golden-ratio)
+    ("a" windmove-left nil)
+    ("b" windmove-left nil)
+    ("p" windmove-up nil)
+    ("n" windmove-down nil)
+    ("f" windmove-right nil)
+    ("e" windmove-right nil)
+    ("C-a" windmove-left nil)
+    ("C-b" windmove-left nil)
+    ("C-p" windmove-up nil)
+    ("C-n" windmove-down nil)
+    ("C-f" windmove-right nil)
+    ("C-e" windmove-right nil)
+    ("q" nil)
+    )
+  (defhydra hydra--play-games (:hint nil :color blue)
+    "
+    ^
+      ^Games
+      ^-------------
+      _!_ happy birthday
+      _D_ dunnet
+      _g_ gomoku
+      _l_ life
+      _m_ mines
+      _M_ mpuz
+      _s_ snake
+      _t_ solitaire
+      _z_ zone
+      _d_ doctor
+  
+      _q_ quit
+      ^-------------
+      "
+    ("!" animate-birthday-presint)
+    ("D" dunnet)
+    ("g" gomoku)
+    ("l" life)
+    ("m" mines)
+    ("M" mpuz)
+    ("s" snake)
+    ("t" solitaire)
+    ("z" zone)
+    ("d" doctor)
+    ("q" nil :color pink)
+  )
+  (defhydra hydra-helper--buf-move()
+    "move buffer"
+    ("s" buf-move-left "left")
+    ("e" buf-move-up "up")
+    ("d" buf-move-down "down")
+    ("f" buf-move-right "right")
+    ("SPC" nil "finished", :exit t))
+  
+  (keymap-set cfg/kmap-update-ui "C-t" '("text scale" . hydra--text-scale/body))
+  (keymap-set cfg/kmap-update-ui "w" '("window move" . hydra--window-move/body))
+  (keymap-set cfg/kmap-major-menu "g" '("games" . hydra--play-games/body))
+  (keymap-set cfg/kmap-major-menu "t" '("toggle" . hydra--toggle-mode/body))
+  
+  (keymap-global-set "M-O" 'hydra--window-move/body); window move
+)
+(use-package yasnippet
+  :ensure t
+  :pin gnu
+  :delight (yas-minor-mode " Ya")
   :init
-  (vertico-posframe-mode 1)
+  (use-package yasnippet-snippets
+    :ensure t
+    :pin nongnu
+    :requires yasnippet
+    :after yasnippet
+    )
+  :config
+  (setq yas-snippet-dirs
+      (list (cfg/path "data/snippets") ; personal snippets
+            yasnippet-snippets-dir
+        ))
+  (yas-reload-all)
+  (which-key-add-key-based-replacements "C-c &" "Yas")
+  :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode))
+(use-package ace-window
+  :ensure t
+  :pin gnu
+  :config
+  (keymap-global-set "M-o" 'ace-window)
+  (setq aw-dispatch-always t)
+  )
+(use-package delight :ensure t :pin gnu)
+(use-package golden-ratio ; auto resize window by golden ratio
+  :ensure t
+  :pin nongnu
+  ;; :hook (after-init . golden-ratio-mode)
   :custom
-  (vertico-posframe-parameters '((left-fringe . 8) (right-fringe . 8))))
+  (golden-ratio-exclude-modes '(occur-mode))
+  :config
+  (keymap-global-set "C-x #" 'golden-ratio))
+(use-package move-text                  ; melpa-stable
+  :ensure t                             ; Using the prefix (C-u *number* or META *number*)
+  :demand t                             ; you can predefine how many lines move-text will travel.
+  :config (move-text-default-bindings))
+(use-package rainbow-mode ; colorize color names in buffers
+  :ensure t
+  :pin gnu
+  ;; :delight
+  :hook (prog-mode . rainbow-mode))
+(use-package rainbow-delimiters                ; highlight brackets according
+  :ensure t
+  :pin nongnu
+  :hook (prog-mode . rainbow-delimiters-mode)) ; to their depth
+(use-package xclip ; copy/paste in terminal
+  :ensure t
+  :pin gnu
+  :unless (display-graphic-p)
+  :config (xclip-mode 1))
+(use-package emacs
+  :ensure nil
+  )
+(use-package emms                       ; emacs multimedia service
+  :ensure t
+  :pin gnu)
+;; (use-package gt)   ; language translator
+(use-package nov                        ; epub reader
+  :ensure t
+  :pin nongnu
+  :mode ("\\.epub\\'". nov-mode))
+(use-package tmr                        ; timers
+  :ensure t
+  :pin gnu
+  :init
+  (keymap-set cfg/kmap-open-entities "t" '("timers" . tmr-tabulated-view))
+  :config
+  (setq tmr-sound-file (cfg/path "data/sound/alert.ogg")))
+;;;;; org
+(use-package org-modern
+  :ensure t
+  :pin gnu
+  :if (display-graphic-p)
+  :after org
+  :custom
+  (org-modern-replace-stars "◉○✦✧▪▫º") ; ◉○✦✧▪▫º ⦿◎◉○✳
+  (org-modern-star 'replace)
+  :config
+  ;; Option 1: Per buffer
+  (add-hook 'org-mode-hook #'org-modern-mode)
+  (add-hook 'org-agenda-finalize-hook #'org-modern-agenda)
+  ;; Option 2: Globally
+  ;; (with-eval-after-load 'org (global-org-modern-mode))
+  )
+(use-package htmlize
+  :ensure t
+  :pin nongnu)
+;;;;; files
+;;;;; ui
+(use-package fontaine
+  :ensure t
+  :pin gnu
+  :defer t
+  :if (display-graphic-p)
+  :init
+  (keymap-set cfg/kmap-update-ui "f" '("fontaine" . fontaine-set-preset))
+  :config
+  (setq fontaine-presets
+        '((regular)
+          (code
+           :default-family "Source Code Pro"
+           :default-weight normal)
+          (code-small
+           :inherit code
+           :default-height 80)
+          (code-large
+           :inherit code
+           :default-height 160
+           :variable-pitch-height 1.0
+           :tab-bar-height 0.9)
+          (educational-board
+           :default-family "Roboto Regular"
+           :default-height 240
+           :variable-pitch-height 1.0
+           :tab-bar-height 0.7)
+          (t
+           ;; <https://protesilaos.com/emacs/fontaine>.
+           :default-family "Adwaita Mono Regular"
+           :default-weight regular :default-slant normal :default-width normal
+           :default-height 120
+           :fixed-pitch-family "Adwaita Mono Regular" :fixed-pitch-weight nil
+           :fixed-pitch-slant nil :fixed-pitch-width nil :fixed-pitch-height 1.0 :fixed-pitch-serif-family nil :fixed-pitch-serif-weight nil
+           :fixed-pitch-serif-slant nil :fixed-pitch-serif-width nil
+           :fixed-pitch-serif-height 1.0 :variable-pitch-family "Sans"
+           :variable-pitch-weight nil :variable-pitch-slant nil
+           :variable-pitch-width nil :variable-pitch-height 1.0
+           :mode-line-active-family nil :mode-line-active-weight nil
+           :mode-line-active-slant nil :mode-line-active-width nil
+           :mode-line-active-height 1.0 :mode-line-inactive-family nil
+           :mode-line-inactive-weight nil :mode-line-inactive-slant nil
+           :mode-line-inactive-width nil :mode-line-inactive-height 1.0
+           :header-line-family nil :header-line-weight nil :header-line-slant nil :header-line-width nil :header-line-height 1.0
+           :line-number-family nil :line-number-weight nil :line-number-slant nil :line-number-width nil :line-number-height 1.0 :tab-bar-family nil :tab-bar-weight nil :tab-bar-slant nil :tab-bar-width nil
+           :tab-bar-height 1.0 :tab-line-family nil :tab-line-weight nil
+           :tab-line-slant nil :tab-line-width nil :tab-line-height 1.0
+           :bold-family nil :bold-slant nil :bold-weight bold :bold-width nil
+           :bold-height 1.0 :italic-family nil :italic-weight nil
+           :italic-slant italic :italic-width nil :italic-height 1.0
+           :line-spacing nil
+           )
+          ))
+  (setq frame-inhibit-implied-resize t)
+  (fontaine-set-preset 'regular)
+  (add-hook 'enable-theme-functions #'fontaine-apply-current-preset)
+  (fontaine-mode 1)
+  )
+(use-package spacious-padding
+  :ensure t
+  :pin gnu
+  :defer
+  :if (display-graphic-p)
+  :init
+  (keymap-set cfg/kmap-update-ui "p" '("paddings" . spacious-padding-mode))
+  :config
+  (setq spacious-padding-subtle-mode-line nil)
+  ;; (setq spacious-padding-subtle-mode-line
+  ;;     '(:mode-line-active error :mode-line-inactive shadow))
+  ;; (setq spacious-padding-subtle-mode-line
+  ;;     '(:mode-line-active "#0000ff" :mode-line-inactive "gray50"))
+  (setq spacious-padding-widths
+        '( :internal-border-width 20
+           :header-line-width 10
+           :mode-line-width 6
+           :tab-width 4
+           :right-divider-width 30
+           :scroll-bar-width 8
+           :fringe-width 8)))
+(use-package all-the-icons
+  :ensure t
+  :if (display-graphic-p))
+(use-package all-the-icons-dired
+  :ensure t
+  :requires all-the-icons
+  :if (display-graphic-p)
+  :hook (dired-mode . all-the-icons-dired-mode))
+(use-package ef-themes
+  :ensure t
+  :pin gnu)
+(use-package treemacs
+  :ensure t
+  :requires (ace-window hydra)
+  :after (ace-window hydra)
+  :defer t
+  :init
+  (use-package treemacs-all-the-icons
+    :ensure t
+    :requires (treemacs all-the-icons)
+    :if (display-graphic-p)
+    )
+  :bind (:map cfg/kmap-minor-menu
+              ("t" . treemacs)
+              ("C-t" . treemacs-select-window))
+  :custom
+  (treemacs-show-hidden-files t)
+  (treemacs-persist-file (cfg/path-s ".cache/treemacs-persist"))
+  :config
+  (treemacs-follow-mode t)
+  (treemacs-filewatch-mode t)
+  (treemacs-fringe-indicator-mode nil)
+  (treemacs-git-mode 'simple)
+  (treemacs-hide-gitignored-files-mode t)
+  (treemacs-project-follow-mode t)
+  (treemacs-filewatch-mode t)
+
+  (which-key-add-key-based-replacements "C-c C-p" "treemacs prj")
+  (which-key-add-key-based-replacements "C-c C-p c" "collapse")
+  (which-key-add-key-based-replacements "C-c C-w" "treemacs wsp"))
+(use-package treemacs-magit
+  :ensure t
+  :requires (treemacs magit)
+  )
+(use-package mines
+  :ensure t
+  :pin gnu)
+(use-package fireplace :ensure t)       ; melpa-stable
+(use-package 2048-game :ensure t)       ; melpa
+;;;;;
+
+;;;
+;;; role--experimental
+;;;
+
+;;;
+;;; role--yard-of-test
+;;;
+(use-package flycheck
+  :ensure t
+  :hook (after-init . global-flycheck-mode)
+  :config
+  (keymap-set cfg/kmap-craft-menu "f" flycheck-command-map)
+  (which-key-add-key-based-replacements "C-c !" "Flycheck")
+  (which-key-add-key-based-replacements "C-. f" "Flycheck"))
+(use-package lsp-mode
+  :ensure t
+  :init
+  (defun cfg/lsp-mode-setup ()
+      (keymap-set cfg/kmap-craft-menu "m" '("imenu" . lsp-ui-imenu)))
+  :hook (lsp-mode . cfg/lsp-mode-setup)
+  :custom (lsp-keymap-prefix "C-. l")
+  )
+(with-eval-after-load 'lsp-mode
+  (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
+(use-package lsp-treemacs
+  :ensure t
+  :requires (lsp-mode treemacs)
+  :after lsp-mode)
+(use-package lsp-ui
+  :ensure t
+  :requires lsp-mode)
+(use-package rustic
+  :ensure t
+  :delight "R✧stic!"
+  :custom
+  (rustic-cargo-use-last-stored-arguments t)
+  (rustic-format-on-save t)
+  :config
+  (which-key-add-key-based-replacements "C-c C-c" "Rustic"))
+
 (provide 'profile-devel)
 ;;; profile-devel.el ends here

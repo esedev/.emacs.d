@@ -29,33 +29,12 @@
 ;; This config use only built-in packages
 
 ;;; Code:
-;; 
 ;;;
 ;;; role--built-in--core
 ;;;
-(use-package dired
-  :delight "Dir"
-  :custom
-  (dired-kill-when-opening-new-dired-buffer t)
-  ;; (dired-omit-files "^\\..*$") ; Omit the dotfiles
-  ;; (dired-omit-files "^\\.$" )
-  (dired-isearch-filenames 'dwim)
-  (dired-recursive-copies 'always)
-  (dired-recursive-deletes 'always)
-  (dired-listing-switches "-aluFh --group-directories-first -I .")
-  (dired-dwim-target t)
-  (delete-by-moving-to-trash t)
-  ;; Auto refresh Dired, but be quiet about it
-  (global-auto-revert-non-file-buffers t)
-  (auto-revert-verbose nil)
-  :hook
-  (dired-mode . dired-hide-details-mode)
-  (dired-mode . auto-revert-mode)
-  ;; (dired-mode . dired-omit-mode) ; <C-x M-o> - toggle dired-omit-mode
-  :config
-  (put 'dired-find-alternate-file 'disabled nil))
 (use-package emacs
-  :init
+  :ensure nil
+  :preface
   (defvar-keymap cfg/kmap-open-config :full t
     :doc "Config"
     "1" '("Config" . (lambda () (interactive) (find-file (cfg/path "Config.org"))))
@@ -88,15 +67,23 @@
     :doc "View changes."
     "T" '("load theme" . cfg/load-theme)
     "t" '("switch theme" . cfg/switch-theme))
+  ;; Craft IDE menu
+  (defvar-keymap cfg/kmap-craft-menu
+    :doc "My craft menu on short hand."
+    "?" '("help" . (lambda () (interactive) (find-file (cfg/path-s "jotting.org"))))
+    )
+  ;; Minor user menu
   (defvar-keymap cfg/kmap-minor-menu
     :doc "My minor menu on short hand."
-    "t" '("tab switch" . tab-switcher)
+    "s" '("tab switcher" . tab-switcher)
+    "t" '("treemacs" . treemacs)
     "C-e" '("w-right" . windmove-right)
     "C-f" '("w-right" . windmove-right)
     "C-a" '("w-left" . windmove-left)
     "C-b" '("w-left" . windmove-left)
     "C-p" '("w-up" . windmove-up)
     "C-n" '("w-down" . windmove-down))
+  ;; Major user menu
   (defvar-keymap cfg/kmap-major-menu
     :doc "My main menu on long hand."
     "c" `("configure" . ,cfg/kmap-open-config)
@@ -106,17 +93,26 @@
     "k" '("kill less" . killless-mode)
     "C-c" '("close emacs" .  save-buffers-kill-terminal)
     "<f12>" `("shelf" . ,cfg/kmap-user-shelf))
+  ;;
+  (keymap-set global-map "C-." cfg/kmap-craft-menu)
   (keymap-set global-map "C-;" cfg/kmap-minor-menu)
   (keymap-set global-map "<f12>" cfg/kmap-major-menu)
-  (defun cfg/display-startup-time ()
-    (message "Emacs loaded in %s seconds with %d garbage collections."
-             (emacs-init-time "%.2f") gcs-done))
-  (add-hook 'emacs-startup-hook #'cfg/display-startup-time)
+
+  :init
+  (defun cfg//ido-mode-setup ()
+    (ido-mode 1)
+    (setf (nth 2 ido-decorations) "\n")
+    (setq ido-enable-flex-matching t) ; show any name that has the chars you typed
+    (setq ido-default-file-method 'selected-window) ; use current pane for newly opened file
+    (setq ido-default-buffer-method 'selected-window) ; use current pane for newly switched buffer
+    (setq max-mini-window-height 0.5) ; big minibuffer height, for ido to show choices vertically
+    )
   )
 
 (use-package desktop
+  :ensure nil
   :custom
-  (desktop-dirname user-emacs-directory "Каталог для хранения файла .desktop.")
+  (desktop-dirname (cfg/path-s "desktop") "Каталог для хранения файла .desktop.")
   ;; (desktop-load-locked-desktop t "Загрузка файла .desktop даже если он заблокирован.")
   (desktop-restore-frames t "Восстанавливать фреймы.")
   (desktop-save t "Сохранять список открытых буферов, файлов и т. д. без лишних вопросов.")
@@ -125,8 +121,31 @@
   ;; (desktop-save-mode t)
   ;; (add-to-list 'delete-frame-functions 'desktop-save)
   (add-to-list 'desktop-modes-not-to-save 'dired-mode))
+(use-package dired
+  :ensure nil
+  :delight "Dir"
+  :custom
+  (dired-kill-when-opening-new-dired-buffer t)
+  ;; (dired-omit-files "^\\..*$") ; Omit the dotfiles
+  ;; (dired-omit-files "^\\.$" )
+  (dired-isearch-filenames 'dwim)
+  (dired-recursive-copies 'always)
+  (dired-recursive-deletes 'always)
+  (dired-listing-switches "-aluFh --group-directories-first -I .")
+  (dired-dwim-target t)
+  (delete-by-moving-to-trash t)
+  ;; Auto refresh Dired, but be quiet about it
+  (auto-revert-verbose nil)
+  :hook
+  (dired-mode . dired-hide-details-mode)
+  (dired-mode . auto-revert-mode)
+  ;; (dired-mode . dired-omit-mode) ; <C-x M-o> - toggle dired-omit-mode
+  :config
+  (put 'dired-find-alternate-file 'disabled nil))
 (use-package eww
-  :init
+  :ensure nil
+  :defer t
+  :preface
   (defun eww-render-buffer ()
     "Render the current buffer in EWW."
     (interactive)
@@ -146,30 +165,11 @@
               `("Поиск в сети" .
                 (lambda ()(interactive)(eww "https://lite.duckduckgo.com"))))
   )
-(use-package flymake
-  :init
-  ;; Manually re-enable Eglot's Flymake backend
-  (defun manually-activate-flymake ()
-    (add-hook 'flymake-diagnostic-functions #'eglot-flymake-backend nil t)
-    (flymake-mode 1))
-  :custom
-  (flymake-no-changes-timeout 1.2)
-  :hook((emacs-lisp-mode . flymake-mode)
-        (ruby-ts-mode . flymake-mode)))
-(use-package eglot
-  :init
-  (defvar-keymap cfg/kmap-eglot
-    :doc "lsp eglot."
-    :name "Eglot menu"
-    "F" '("format" . eglot-format)
-    "f" '("quic fix" . eglot-code-action-quickfix)
-    "r" '("rename" . eglot-rename)
-    "<f12>" '("run eglot" . eglot-ensure))
-  (keymap-set cfg/kmap-minor-menu "e" cfg/kmap-eglot)
-  :bind (("C-." . eglot-code-action-quickfix))
-  :custom
-  (eglot-autoshutdown t))
 (use-package org
+  :ensure nil
+  :pin manual
+  :defer t
+  :hook  (org-mode . u-hook--org-mode-setup)
   :init
   (defun u-hook--org-mode-setup ()
     "Minor modes tunning."
@@ -196,11 +196,12 @@
    '((sequence "TODO(t)" "WORK(g)" "WAIT(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")))
   ;; agenda
   (org-agenda-files (list (concat org-directory "/agenda")))
+  (org-confirm-babel-evaluate nil)
   :config
   (add-to-list 'org-src-lang-modes
                (cons "D" 'd)
                (cons "conf-unix" 'conf-unix))
-  (setq org-confirm-babel-evaluate nil)
+  ;; (setq org-confirm-babel-evaluate nil)
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((emacs-lisp . t)
@@ -208,9 +209,13 @@
      (shell . t)
      (ruby . t)
      (python . t)))
-  :hook
-  (org-mode . u-hook--org-mode-setup))
-(use-feature ruby-ts-mode
+  (which-key-add-key-based-replacements "C-c o" "Org")
+  (which-key-add-major-mode-key-based-replacements 'org-mode
+    "C-c \"" "Org plot" ; \"
+    "C-c C-v" "Org babel"
+    "C-c C-x" "Org X"))
+(use-package ruby-ts-mode
+  :ensure nil
   :delight "R✧by"
   :mode "\\.rb\\'"
   :mode "config.ru\\'"
@@ -224,13 +229,8 @@
   :hook (ruby-base-mode . subword-mode)
   :custom (ruby-indent-level 2)
           (ruby-indent-tabs-mode nil))
-(use-package rust-ts-mode
-  :delight "R✧st"
-  :mode "\\.rs\\'"
-  :hook
-  (rust-ts-mode . eglot-ensure)
-  )
 (use-package term
+  :ensure nil
   :commands term
   :config
   ;; Match the default Bash shell prompt.  Update this if you have a custom prompt
@@ -238,9 +238,11 @@
   ;; (setq explicit-shell-file-name "bash") ; Change this to zsh, etc
   (setq term-prompt-regexp "^[^#$%>\n]*[#$%>λ] *"))
 (use-package which-key
+  :ensure nil
   :delight
+  :hook (emacs-startup . which-key-mode)
   :config
-  (setq which-key-idle-delay 0.6)
+  (setq which-key-idle-delay 0.4)
   (setq which-key-idle-secondary-delay 0.05)
   (setq which-key-min-display-lines 4)
 
@@ -249,14 +251,9 @@
   ;; (add-to-list 'which-key-replacement-alist '(("DEL" . nil) . ("⇤" . nil)))
   ;; (add-to-list 'which-key-replacement-alist '(("SPC" . nil) . ("␣" . nil)))
 
-  (which-key-add-key-based-replacements "C-; e" "Eglot")
-  (which-key-add-key-based-replacements "C-c &" "Yas")
-  (which-key-add-key-based-replacements "C-c o" "Org")
+  (which-key-add-key-based-replacements "C-c @" "ShowHide")
   (which-key-add-key-based-replacements "C-c e" "IDE")
-  (which-key-add-major-mode-key-based-replacements 'org-mode
-    "C-c \"" "Org plot" ; \"
-    "C-c C-v" "Org babel"
-    "C-c C-x" "Org X")
+
   (which-key-add-major-mode-key-based-replacements 'rust-mode
     "C-c C-c" "Rust")
   (which-key-add-key-based-replacements "C-c p" "Cape")
@@ -272,6 +269,7 @@
   (which-key-add-key-based-replacements "C-x 8" '("unicode" . "Unicode keys"))
   (which-key-add-key-based-replacements "C-x 8 e" "emoji"))
 (use-package whitespace
+  :ensure nil
   :config
   (setq whitespace-display-mappings
         '((space-mark 32
@@ -288,30 +286,59 @@
                     [92 9])))
   ;; delete trailing whitespaces when save buffer
   (add-to-list 'write-file-functions 'delete-trailing-whitespace))
-(use-feature-site auto-complete)
-(use-feature-site company-mode
-  :delight "CompAny"
-  :hook
-  (rust-ts-mode . company-mode)
+(when (fboundp 'auto-complete)
+  (ac-config-default)
   )
-(use-feature-site dockerfile-mode
-  :init
-  (defun cfg/test ()
-    "NO DOC"
-    (interactive)
-    (message "TEST IS SUCCESSFULLY!!!")))
-
-(use-feature-site magit
+(when (fboundp 'company-mode)
+  (global-company-mode 1)
+  )
+(when (fboundp 'magit-status-mode)
+  (use-package magit
+    :ensure t
+    :pin nongnu
+    :custom
+    (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+  )
+(use-package flymake
+  :ensure nil
   :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
-(use-feature-site yaml-mode)
-
-
+  (flymake-no-changes-timeout 1.2)
+  :hook((emacs-lisp-mode . flymake-mode)))
+(use-package eglot
+  :ensure nil
+  :init
+  (defun cfg//remap-major-modes ()
+    (push '(ruby-mode ruby-ts-mode) major-mode-remap-alist)
+    (push '(rust-mode rust-ts-mode) major-mode-remap-alist))
+  (defun cfg//manually-activate-flymake ()
+    (add-hook 'flymake-diagnostic-functions #'eglot-flymake-backend nil t)
+    (flymake-mode 1))
+  (defvar-keymap cfg/kmap-eglot
+    :doc "lsp eglot."
+    :name "Eglot menu"
+    "F" 'eglot-format
+    "f" 'eglot-code-action-quickfix
+    "r" 'eglot-rename
+    "<f12>" 'eglot-ensure)
+  (keymap-set cfg/kmap-craft-menu "e" cfg/kmap-eglot)
+  (which-key-add-key-based-replacements "C-. e" "Eglot")
+  ;; :hook (eglot--managed-mode . cfg//manually-activate-flymake)
+  :custom
+  (eglot-autoshutdown t)
+  ;; :config
+  ;; (add-to-list 'eglot-stay-out-of 'flymake)
+  )
 (use-package rust-ts-mode
   :delight "R✧st"
   :mode "\\.rs\\'"
   :hook
-  (rust-ts-mode . eglot-ensure)
-  )
+  (rust-ts-mode . eglot-ensure))
+(cfg//remap-major-modes)
+
+(cfg//ido-mode-setup)
+
+(when (fboundp 'company-mode)
+  (company-mode 1))
+
 (provide 'profile-built-in)
 ;;; profile-built-in.el ends here

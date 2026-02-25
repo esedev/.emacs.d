@@ -15,10 +15,11 @@ git clone https://github.com/esedev/.emacs.d.git
   #+begin_src shell
 cp scripts/emacs-runner.sh /usr/local/bin/emax
   #+end_src
-+ add to ~/.bashrc (*optional*)
++ run the command to add a line to the ~/.bashrc (*optional*)
         #+begin_src shell
-. "$HOME/.config/emacs/scripts/emacs-env"
+echo ". \$HOME/.config/emacs/scripts/emacs-env" >> ~/.bashrc
   #+end_src
+
 
 * Install packages
 + emacs setup-roles.el
