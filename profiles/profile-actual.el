@@ -34,7 +34,7 @@
 ;;;
 (use-package emacs
   :ensure nil
-  :preface
+  :init
   (defvar-keymap cfg/kmap-open-config :full t
     :doc "Config"
     "1" '("Config" . (lambda () (interactive) (find-file (cfg/path "Config.org"))))
@@ -97,16 +97,6 @@
   (keymap-set global-map "C-." cfg/kmap-craft-menu)
   (keymap-set global-map "C-;" cfg/kmap-minor-menu)
   (keymap-set global-map "<f12>" cfg/kmap-major-menu)
-
-  :init
-  (defun cfg//ido-mode-setup ()
-    (ido-mode 1)
-    (setf (nth 2 ido-decorations) "\n")
-    (setq ido-enable-flex-matching t) ; show any name that has the chars you typed
-    (setq ido-default-file-method 'selected-window) ; use current pane for newly opened file
-    (setq ido-default-buffer-method 'selected-window) ; use current pane for newly switched buffer
-    (setq max-mini-window-height 0.5) ; big minibuffer height, for ido to show choices vertically
-    )
   )
 
 ;; (use-package desktop
@@ -890,9 +880,6 @@
   :ensure nil
   :defer t
   :init
-  (defun cfg//remap-major-modes ()
-    (push '(ruby-mode ruby-ts-mode) major-mode-remap-alist)
-    (push '(rust-mode rust-ts-mode) major-mode-remap-alist))
   (defun cfg//manually-activate-flymake ()
     (add-hook 'flymake-diagnostic-functions #'eglot-flymake-backend nil t)
     (flymake-mode 1))

@@ -177,6 +177,7 @@
 
 ;;; Code:
 <<role--built-in--core>>
+<<code--emacs-built-in>>
 <<role--built-in--ide>>
 
 (cfg//ido-mode-setup)
@@ -217,7 +218,6 @@
 <<role--navi--vertico>>
 <<pckg--hydra>>
 <<suit--emacs-editor>>
-
 
 ;; <<role--experimental>>
 ;; <<role--yard-of-test>>
@@ -415,9 +415,6 @@
   :ensure nil
   :defer t
   :init
-  (defun cfg//remap-major-modes ()
-    (push '(ruby-mode ruby-ts-mode) major-mode-remap-alist)
-    (push '(rust-mode rust-ts-mode) major-mode-remap-alist))
   (defun cfg//manually-activate-flymake ()
     (add-hook 'flymake-diagnostic-functions #'eglot-flymake-backend nil t)
     (flymake-mode 1))
@@ -443,18 +440,8 @@
 #+begin_src emacs-lisp :noweb yes
 (use-package emacs
   :ensure nil
-  :preface
-  <<bind--interactive-user-hotkeys>>
-
   :init
-  (defun cfg//ido-mode-setup ()
-    (ido-mode 1)
-    (setf (nth 2 ido-decorations) "\n")
-    (setq ido-enable-flex-matching t) ; show any name that has the chars you typed
-    (setq ido-default-file-method 'selected-window) ; use current pane for newly opened file
-    (setq ido-default-buffer-method 'selected-window) ; use current pane for newly switched buffer
-    (setq max-mini-window-height 0.5) ; big minibuffer height, for ido to show choices vertically
-    )
+  <<bind--interactive-user-hotkeys>>
   )
 
 ;; (use-package desktop
@@ -1767,6 +1754,21 @@
                                    'None)) t)
 #+end_src
 * =----------------------------------------=
+* code--emacs-built-in
+#+name: code--emacs-built-in
+#+begin_src emacs-lisp :results silent
+(defun cfg//ido-mode-setup ()
+  (ido-mode 1)
+  (setf (nth 2 ido-decorations) "\n")
+  (setq ido-enable-flex-matching t) ; show any name that has the chars you typed
+  (setq ido-default-file-method 'selected-window) ; use current pane for newly opened file
+  (setq ido-default-buffer-method 'selected-window) ; use current pane for newly switched buffer
+  (setq max-mini-window-height 0.5) ; big minibuffer height, for ido to show choices vertically
+  )
+(defun cfg//remap-major-modes ()
+  (push '(ruby-mode ruby-ts-mode) major-mode-remap-alist)
+  (push '(rust-mode rust-ts-mode) major-mode-remap-alist))
+#+end_src
 * code--emacs-improvies
 #+name: code--emacs-improvies
 #+begin_src emacs-lisp
