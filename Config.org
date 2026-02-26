@@ -50,11 +50,8 @@
   (expand-file-name (format "save/%s" arg) user-emacs-directory))
 (defun cfg/path-t (arg)
   (expand-file-name (format "target/%s/%s" cfg/profile arg) user-emacs-directory))
-
-(defun cfg/set-title-tail (arg)
-  "Set value `cfg/title-tail' as ARG."
-       (concat "  [" arg "]"))
-
+(defun cfg/path-u (arg)
+  (expand-file-name (format "target/%s" arg) user-emacs-directory))
 ;;; micro tuning of Emacs
 ;; (setq frame-title-format '( "GNU/Emacs " cfg/title))
 (setq frame-title-format
@@ -76,13 +73,14 @@
 ;;;;; override custom
 (custom-set-variables
  '(auto-save-default nil)
- '(auto-save-list-file-prefix (cfg/path "target/tmp-auto-save-list/.saves-"))
+ '(auto-save-list-file-prefix (cfg/path-u "tmp-auto-save-list/.saves-"))
  '(create-lockfiles nil)
  '(make-backup-files nil)
+ '(project-list-file (cfg/path-u "projects"))
  '(recentf-mode t) ; use the M-x recentf-open-files command
- '(recentf-save-file (cfg/path-s "recentf"))
+ '(recentf-save-file (cfg/path-u "recentf"))
  '(savehist-mode t)
- '(savehist-file (cfg/path-s "history"))
+ '(savehist-file (cfg/path-u "history"))
  '(use-short-answers t))
 
 (custom-set-variables
@@ -99,11 +97,10 @@
  '(tab-bar-show 100) ; hide if tabs less 100
  '(tool-bar-mode nil)
  '(global-hl-line-mode t) ;;; Подсветка текущей строки
-;;  '(custom-safe-themes t)
  '(visible-bell t)) ; no blink please
 
-;; (load (cfg/path (format "profiles/profile-%s-early" cfg/profile)) 'no-error)
-;; (setq package-enable-at-startup nil)
+(setq package-enable-at-startup nil)    ; must have
+
 (provide 'early-init)
 ;;; early-init.el ends here
 #+end_src
@@ -130,14 +127,14 @@
   (package-archive-priorities '(("gnu" . 10) ("nongnu" . 9)
                                 ("melpa-stable" . 7) ("melpa" . 1)))
   :config
-  ;; (package-initialize)
+  (package-initialize)                  ; must have
   (when (eq cfg/profile 'built-in)
       (setq package-archives nil)))
 (use-package use-package
   :ensure nil
   :custom
   ;; (use-package-always-defer t)
-  (use-package-minimum-reported-time 0.005)
+  (use-package-minimum-reported-time 0.05)
   (use-package-verbose nil))
 ;;;;; end of configure package manager
 
@@ -148,9 +145,6 @@
 (load (cfg/path (format "profiles/profile-%s" cfg/profile)))
 
 (load (cfg/path "data/help-quick-custom"))
-
-;;; deferred activations
-;; (which-key-mode)
 
 (provide 'init)
 ;;; init.el ends here
@@ -183,13 +177,9 @@
 
 ;;; Code:
 <<role--built-in--core>>
-<<role--built-in--site>>
 <<role--built-in--ide>>
 
 (cfg//ido-mode-setup)
-
-(when (fboundp 'company-mode)
-  (company-mode 1))
 
 (provide 'profile-built-in)
 ;;; profile-built-in.el ends here
@@ -225,10 +215,12 @@
 ;; <<package-manager--no-packages>>
 <<role--built-in--core>>
 <<role--navi--vertico>>
-<<role--emacs>>
+<<pckg--hydra>>
+<<suit--emacs-editor>>
 
-<<role--experimental>>
-<<role--yard-of-test>>
+
+;; <<role--experimental>>
+;; <<role--yard-of-test>>
 
 (provide 'profile-devel)
 ;;; profile-devel.el ends here
@@ -251,7 +243,7 @@
   <<bind--override-standard>>
   (cfg/bind--override-standard)
 
-  <<code--my-actions>>
+  <<code--emacs-user-functions>>
   <<mode--killless-mode>>
   <<mode--user-trmap-mode>>
 
@@ -296,19 +288,6 @@
 <<pckg--eglot>>
 <<pckg--rust-ts-mode>>
 (cfg//remap-major-modes)
-#+end_src
-* role--built-in--site
-#+name: role--built-in--site
-#+begin_src emacs-lisp :noweb yes
-(when (fboundp 'auto-complete)
-  (ac-config-default)
-  )
-(when (fboundp 'company-mode)
-  (global-company-mode 1)
-  )
-(when (fboundp 'magit-status-mode)
-  <<pckg--magit>>
-  )
 #+end_src
 * =------=
 * role--navi--vertico
@@ -434,6 +413,7 @@
 #+begin_src emacs-lisp
 (use-package eglot
   :ensure nil
+  :defer t
   :init
   (defun cfg//remap-major-modes ()
     (push '(ruby-mode ruby-ts-mode) major-mode-remap-alist)
@@ -477,18 +457,18 @@
     )
   )
 
-(use-package desktop
-  :ensure nil
-  :custom
-  (desktop-dirname (cfg/path-s "desktop") "Каталог для хранения файла .desktop.")
-  ;; (desktop-load-locked-desktop t "Загрузка файла .desktop даже если он заблокирован.")
-  (desktop-restore-frames t "Восстанавливать фреймы.")
-  (desktop-save t "Сохранять список открытых буферов, файлов и т. д. без лишних вопросов.")
-  ;; :hook (after-init . desktop-read)
-  :config
-  ;; (desktop-save-mode t)
-  ;; (add-to-list 'delete-frame-functions 'desktop-save)
-  (add-to-list 'desktop-modes-not-to-save 'dired-mode))
+;; (use-package desktop
+;;   :ensure nil
+;;   :custom
+;;   (desktop-dirname (cfg/path-u "desktop") "Каталог для хранения файла .desktop.")
+;;   ;; (desktop-load-locked-desktop t "Загрузка файла .desktop даже если он заблокирован.")
+;;   (desktop-restore-frames t "Восстанавливать фреймы.")
+;;   (desktop-save t "Сохранять список открытых буферов, файлов и т. д. без лишних вопросов.")
+;;   ;; :hook (after-init . desktop-read)
+;;   :config
+;;   ;; (desktop-save-mode t)
+;;   ;; (add-to-list 'delete-frame-functions 'desktop-save)
+;;   (add-to-list 'desktop-modes-not-to-save 'dired-mode))
 #+end_src
 * pckg--eww
 #+name: pckg--eww
@@ -506,16 +486,19 @@
       (with-current-buffer buf
         (insert html)
         (goto-char (point-min))
-        (eww-display-html 'utf-8 source nil nil buf))
+        (eww-display-html 'utf-8 source nil (point-min) buf))
       (switch-to-buffer buf)))
   :config
-  (keymap-set cfg/kmap-user-shelf "<f1>"
+  (setq eww-search-prefix "https://lite.duckduckgo.com/lite/?q=")
+  (keymap-set cfg/kmap-user-shelf "<f2>"
               '("Руководство по GNU Emacs" .
                 (lambda ()(interactive)(eww "https://alexott.net/ru/emacs/emacs-manual/"))))
   (keymap-set cfg/kmap-user-shelf "<f3>"
               `("Поиск в сети" .
-                (lambda ()(interactive)(eww "https://lite.duckduckgo.com"))))
-  )
+                (lambda ()(interactive)(eww "https://lite.duckduckgo.com/lite"))))
+  (keymap-set cfg/kmap-user-shelf "<f4>"
+              '("eww: текущий буфер" .
+                eww-render-buffer)))
 #+end_src
 * pckg--flymake
 #+name: pckg--flymake
@@ -523,8 +506,8 @@
 (use-package flymake
   :ensure nil
   :custom
-  (flymake-no-changes-timeout 1.2)
-  :hook((emacs-lisp-mode . flymake-mode)))
+  (flymake-no-changes-timeout 1.2))
+  ;; :hook((emacs-lisp-mode . flymake-mode)))
 #+end_src
 * pckg--org
 #+name: pckg--org
@@ -542,13 +525,13 @@
     (visual-line-mode 1))
   (defun cfg/org (arg)
     "Return path to ARG file."
-    (expand-file-name arg org-directory)
-    )
+    (expand-file-name arg (cfg/shelf "org-arium")))
   (keymap-set cfg/kmap-open-entities "a" '("agenda" . org-agenda))
   (keymap-set cfg/kmap-open-entities "s" '("schedule" . org-agenda-list))
   :bind-keymap
   ("C-c o" . org-mode-map)
   :custom
+  (org-directory (cfg/org ""))
   (org-startup-folded 'overview)
   (org-edit-src-content-indentation 0)
   (org-agenda-current-time-string "← now ———————————————————— ☢")
@@ -602,6 +585,7 @@
 #+name: pckg--rust-ts-mode
 #+begin_src emacs-lisp :results silent
 (use-package rust-ts-mode
+  :ensure nil
   :delight "R✧st"
   :mode "\\.rs\\'"
   :hook
@@ -1007,6 +991,7 @@
 (use-package magit
   :ensure t
   :pin nongnu
+  :defer t
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 #+end_src
@@ -1076,7 +1061,7 @@
 (use-package spacious-padding
   :ensure t
   :pin gnu
-  :defer
+  :defer t
   :if (display-graphic-p)
   :init
   (keymap-set cfg/kmap-update-ui "p" '("paddings" . spacious-padding-mode))
@@ -1114,7 +1099,7 @@
               ("C-t" . treemacs-select-window))
   :custom
   (treemacs-show-hidden-files t)
-  (treemacs-persist-file (cfg/path-s ".cache/treemacs-persist"))
+  (treemacs-persist-file (cfg/path-u ".cache/treemacs-persist"))
   :config
   (treemacs-follow-mode t)
   (treemacs-filewatch-mode t)
@@ -1129,6 +1114,8 @@
   (which-key-add-key-based-replacements "C-c C-w" "treemacs wsp"))
 (use-package treemacs-magit
   :ensure t
+  :defer t
+  :after (treemacs magit)
   :requires (treemacs magit)
   )
 #+end_src
@@ -1209,6 +1196,7 @@
   :ensure t
   :pin gnu
   :delight (yas-minor-mode " Ya")
+  :defer t
   :init
   (use-package yasnippet-snippets
     :ensure t
@@ -1223,118 +1211,8 @@
         ))
   (yas-reload-all)
   (which-key-add-key-based-replacements "C-c &" "Yas")
-  :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode))
-#+end_src
-* --unused
-** pckg--smartparens
-#+name: pckg--smartparens
-#+begin_src emacs-lisp :results silent
-(use-package smartparens
-  :hook (prog-mode text-mode) ;; add `smartparens-mode` to these hooks
-  :config
-  ;; load default config
-  (require 'smartparens-config))
-#+end_src
-** pckg--flycheck-eglot
-#+name: pckg--flycheck-eglot
-#+begin_src emacs-lisp :results silent
-(use-package flycheck-eglot
-  :disabled
-  :requires flycheck
-  :after (eglot flycheck)
-  :config
-  (global-flycheck-eglot-mode 1))
-#+end_src
-** pckg--gt TODO: tune backend
-#+name: pckg--gt
-#+begin_src emacs-lisp
-(use-package gt ; language translator
-  :disabled
-  :config
-  (setq gt-langs '(en ru))
-  ;; (setq gt-default-translator (gt-translator :engines (gt-google-engine)))
-  ;; (setq gt-default-translator (gt-translator :engines (gt-bing-engine)))
-  (setq gt-default-translator (gt-translator :engines (gt-stardict-engine)))
- )
-#+end_src
-
-** pckg--projectile
-#+name: pckg--projectile
-#+begin_src emacs-lisp
-(use-package projectile
-  :disabled
-  :bind
-  ("C-x p" . projectile-command-map)
-  ;; :custom
-  ;; (projectile-completion-system 'ivy)
-  :config
-  (projectile-mode 1)
-  (when (and *sys/win32*
-             (executable-find "tr"))
-    (setq projectile-indexing-method 'alien))
-  (add-to-list 'projectile-globally-ignored-directories "node_modules"))
-#+end_src
-
-** pckg--rust-mode
-#+name: pckg--rust-mode
-#+begin_src emacs-lisp
-(use-package rust-mode ; https://elpa.nongnu.org/nongnu/rust-mode.html
-  :mode ("\\.rs\\'" . rust-mode)
-  ;; :hook (rust-mode . eglot-ensure)
-  ;; :config
-  ;; (let ((dot-cargo-bin (expand-file-name "~/.cargo/bin/")))
-    ;; (setq rust-rustfmt-bin (concat dot-cargo-bin "rustfmt")
-          ;; rust-cargo-bin (concat dot-cargo-bin "cargo")
-          ;; rust-format-on-save t))
-  :custom
-  (rust-format-on-save t))
-#+end_src
-** pckg--rustic
-#+name: pckg--rustic
-#+begin_src emacs-lisp :results silent
-(use-package rustic
-  :ensure t
-  :delight "R✧stic"
-  ;; :mode ((rx ".rs" string-end) . rustic-mode)
-  :init
-  ;; (setq rustic-lsp-setup-p nil)
-  ;; (setq rustic-lsp-client 'eglot)
-  :custom
-  (rustic-cargo-use-last-stored-arguments t)
-  (rustic-format-on-save t)
-  :config
-  (which-key-add-key-based-replacements "C-c C-c" "Rustic"))
-(use-package flymake-clippy
-  :ensure t
-  :pin gnu
-  :after (rustic flymake)
-  :hook (rustic-mode . flymake-clippy-setup)
-  :config (add-hook 'rustic-mode-hook #'flymake-mode))
-#+end_src
-** pckg--rust-ext
-#+name: pckg--rust-ext
-#+begin_src emacs-lisp :results silent
-(use-package flymake-clippy
-  :hook
-  (rust-ts-mode . flymake-mode)
-  (rust-ts-mode . flymake-clippy-setup))
-(use-package cargo-mode
-  :delight "C✧rgo"
-  :mode "Cargo.toml\\'"
-  :hook (rust-ts-mode . cargo-minor-mode)
-  :custom
-  (compilation-scroll-output t))
-#+end_src
-** pckg--vterm
-#+name: pckg--vterm
-#+begin_src emacs-lisp :results silent
-(use-package vterm
-  :disabled
-  :commands vterm
-  :config
-  ;; (setq term-prompt-regexp "^[^#$%>\n]*[#$%>] *")  ;; Set this to match your custom shell prompt
-  ;;(setq vterm-shell "zsh")                       ;; Set this to customize the shell to launch
-  (setq vterm-max-scrollback 10000))
+  :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
+  )
 #+end_src
 * =Suits=
 * suit--emacs-editor
@@ -1369,29 +1247,24 @@
   :ensure t
   :pin nongnu
   :hook (prog-mode . rainbow-delimiters-mode)) ; to their depth
-(use-package xclip ; copy/paste in terminal
-  :ensure t
-  :pin gnu
-  :unless (display-graphic-p)
-  :config (xclip-mode 1))
 #+end_src
 * suit--emacs-media
 #+name: suit--emacs-media
 #+begin_src emacs-lisp :results silent
-(use-package emacs
-  :ensure nil
-  )
 (use-package emms                       ; emacs multimedia service
   :ensure t
-  :pin gnu)
+  :pin gnu
+  :defer t)
 ;; (use-package gt)   ; language translator
 (use-package nov                        ; epub reader
   :ensure t
   :pin nongnu
+  :defer t
   :mode ("\\.epub\\'". nov-mode))
 (use-package tmr                        ; timers
   :ensure t
   :pin gnu
+  :defer t
   :init
   (keymap-set cfg/kmap-open-entities "t" '("timers" . tmr-tabulated-view))
   :config
@@ -1402,10 +1275,10 @@
 #+begin_src emacs-lisp :results silent
 (use-package all-the-icons
   :ensure t
-  :if (display-graphic-p))
+  :if (display-graphic-p)
+  )
 (use-package all-the-icons-dired
   :ensure t
-  :requires all-the-icons
   :if (display-graphic-p)
   :hook (dired-mode . all-the-icons-dired-mode))
 (use-package ef-themes
@@ -1441,9 +1314,14 @@
 #+begin_src emacs-lisp :results silent
 (use-package mines
   :ensure t
-  :pin gnu)
-(use-package fireplace :ensure t)       ; melpa-stable
-(use-package 2048-game :ensure t)       ; melpa
+  :pin gnu
+  :defer t)
+(use-package fireplace                  ; melpa-stable
+  :ensure t
+  :defer t)
+(use-package 2048-game                  ; melpa
+  :ensure t
+  :defer t)
 #+end_src
 * suit--rustic-lsp-flycheck
 #+name: suit--rustic-lsp-flycheck
@@ -1579,7 +1457,7 @@
   :doc "Config"
   "1" '("Config" . (lambda () (interactive) (find-file (cfg/path "Config.org"))))
   ;; "1" '("Config" . (i-event (find-file (cfg/path "Config.org"))))
-  "2" '("Cfg directory" . (lambda () (interactive) (find-file (cfg/path ""))))
+  "2" '("Cfg directory" . (lambda () (interactive) (project-switch-project (cfg/path ""))))
   "3" '("Emacs early-init.el" . (lambda () (interactive) (find-file early-init-file)))
   "4" '("Emacs init.el" . (lambda () (interactive) (find-file user-init-file)))
   "5" '("Emacs custom-file" . (lambda () (interactive)
@@ -1688,7 +1566,7 @@
   ("k" killless-mode))
 #+end_src
 ** bind--hydra-change-windows
-#+name: bind--hydra-change-windows
+#+name: bind--hydra-change-windows :results silent
 #+begin_src emacs-lisp
 (defhydra hydra--text-scale(:timeout 10)
   "scale text"
@@ -1802,24 +1680,18 @@
  '(diary-file (cfg/shelf "diary"))
  )
 ;;;;; C/C++ mode
-(c-add-style "main"
-             '("gnu"
-               (c-basic-offset . 4)
-               ; other
-               ;; (c-offsets-alist
-                ;; ()
-                ;; )
-               ))
+(c-add-style "main" '("gnu" (c-basic-offset . 4)))
 (customize-set-variable 'c-default-style '((java-mode . "java") (awk-mode . "awk") (other . "main")))
 ;;;;; hightlight line off
 (dolist (mode '(eshell-mode-hook
                   term-mode-hook
                   shell-mode-hook))
     (add-hook mode (lambda () (hl-line-mode 0))))
-;;;;; line-numbers off
+;;;;; display-line-numbers off
 (dolist (mode '(eshell-mode-hook
-                minimap-sb-mode-hook
+                eww-mode-hook
                 org-mode-hook
+                minimap-sb-mode-hook
                 term-mode-hook
                 shell-mode-hook
                 treemacs-mode-hook
@@ -1859,47 +1731,40 @@
 ;;;
 ;;; thms--initialize
 ;;;
-(use-package emacs
-  :init
-  (defvar cfg/available-theme-tags '(None Craft Night Paper Retro)
-    "List of available tags of themes.")
-  (defvar cfg/theme-profile-tags '((actual . Night)
-                                   (built-in . wombat)
-                                   (craft . Craft)
-                                   (devel . None))
-    "Table for selecting a theme by profile.")
-  (defvar cfg/theme-tags '((Craft . misterioso)
-                           (Night . tango-dark)
-                           (Paper . adwaita)
-                           (Retro . deeper-blue))
-    "Table for selecting a theme by tag.")
-  (defun cfg/switch-theme (theme &optional no-confirm no-enable)
-    "Wrapper for `load-theme', load theme ARG."
-    (interactive
-     (list
-      (intern (completing-read "Load custom theme: "
-                               (mapcar #'symbol-name
-				                       (append cfg/available-theme-tags
-                                               (custom-available-themes)))))
-      nil nil))
-    (mapcar #'disable-theme custom-enabled-themes)
-    (cfg/set-title-tail (symbol-name theme))
-    (unless (eq 'None theme)
-      (load-theme (or (alist-get theme cfg/theme-tags) theme) no-confirm no-enable)))
-  :config
-  (unless (member cfg/profile '(built-in devel))
-    (use-package ef-themes
-      :ensure nil
-      :if (package-installed-p 'ef-themes)
-      :config
-      (setq cfg/theme-tags '((Craft . ef-maris-dark)
-                             (Night . ef-night)
-                             (Paper . ef-cyprus)
-                             (Retro . ef-bio)))))
-
-  (cfg/switch-theme (intern-soft (or (getenv "EMAX_THM")
-                                     (alist-get cfg/profile cfg/theme-profile-tags)
-                                     'None)) t))
+(defvar cfg/available-theme-tags '(None Craft Night Paper Retro)
+  "List of available tags of themes.")
+(defvar cfg/theme-profile-tags '((actual . Night)
+                                 (built-in . wombat)
+                                 (craft . Craft)
+                                 (devel . None))
+  "Table for selecting a theme by profile.")
+(defvar cfg/theme-tags '((Craft . misterioso)
+                         (Night . tango-dark)
+                         (Paper . adwaita)
+                         (Retro . deeper-blue))
+  "Table for selecting a theme by tag.")
+(defun cfg/switch-theme (theme &optional no-confirm no-enable)
+  "Wrapper for `load-theme', load theme ARG."
+  (interactive
+   (list
+    (intern (completing-read "Load custom theme: "
+                             (mapcar #'symbol-name
+				                     (append cfg/available-theme-tags
+                                             (custom-available-themes)))))
+    nil nil))
+  (mapcar #'disable-theme custom-enabled-themes)
+  (unless (eq 'None theme)
+    (load-theme (or (alist-get theme cfg/theme-tags) theme) no-confirm no-enable)))
+;; override theme tags
+(when (and (member cfg/profile '(actual craft)) (package-installed-p 'ef-themes))
+  (setq cfg/theme-tags '((Craft . ef-maris-dark)
+                         (Night . ef-night)
+                         (Paper . ef-cyprus)
+                         (Retro . ef-bio))))
+;; load theme
+(cfg/switch-theme (intern-soft (or (getenv "EMAX_THM")
+                                   (alist-get cfg/profile cfg/theme-profile-tags)
+                                   'None)) t)
 #+end_src
 * =----------------------------------------=
 * code--emacs-improvies
@@ -1908,10 +1773,6 @@
 ;;;
 ;;; Emacs improvies
 ;;;
-(defun em-im-kill-this-buffer ()
-  "Kill current buffer."
-  (interactive)
-  (kill-buffer (current-buffer)))
 (defun em-im-move-prev-line (n)
   "Move cursor to N previous lines and scrol down N lines."
   (interactive "p")
@@ -1932,31 +1793,24 @@
   "Returns an anonymous function that calls the FUNC with an argument ARG."
   `(lambda () (interactive) (,func ,arg)))
 #+end_src
-* code--my-actions
-#+name: code--my-actions
+* code--emacs-user-functions
+#+name: code--emacs-user-functions
 #+begin_src emacs-lisp
 ;;;
-;;; code--my-actions
+;;; code--emacs-user-functions
 ;;;
 ;; toggle tab-bar headers visible
-(defun u--toggle-tab-bar-headers-visible (&optional visible)
+(defun cfg/toggle-tab-bar-headers-visible (&optional visible)
   "Show/hide headers of tab bar.
    If argument VISIBLE is nil, then toggle visible of headers.
    If argument VISIBLE <= 0, then hide headers.
    If argument VISIBLE > 0, then show headers."
   (interactive)
   (let ((tbs (if visible (if ; <
-                                          (> visible 0) t 100)
-                            (if (eq tab-bar-show t) 100 t))))
+                             (> visible 0) t 100)
+               (if (eq tab-bar-show t) 100 t))))
     (customize-set-variable 'tab-bar-show tbs))
-  (eq tab-bar-show t)
-  )
-;; show daily help
-(defun u--help-daily-toggle ()
-  "The daily help text, UNIMPLEMENTED."
-  (interactive)
-  (message "User daily help text")
-  (display-buffer "Daily help"))
+  (eq tab-bar-show t))
 #+end_src
 * code--jobs
 #+name: code--jobs
@@ -1982,9 +1836,135 @@
   (other-window 1)
   ;; (tab-bar-switch-to-next-tab)
   (tab-next)
-  (u--toggle-tab-bar-headers-visible 0)
+  (cfg/toggle-tab-bar-headers-visible 0)
   (killless-mode t)
   )
+#+end_src
+* --unused
+** pckg--smartparens-xclip
+#+name: pckg--smartparens
+#+begin_src emacs-lisp :results silent
+(use-package smartparens
+  :hook (prog-mode text-mode) ;; add `smartparens-mode` to these hooks
+  :config
+  ;; load default config
+  (require 'smartparens-config))
+(use-package xclip ; copy/paste in terminal
+  :ensure t
+  :pin gnu
+  :unless (display-graphic-p)
+  :config (xclip-mode 1))
+#+end_src
+** pckg--flycheck-eglot
+#+name: pckg--flycheck-eglot
+#+begin_src emacs-lisp :results silent
+(use-package flycheck-eglot
+  :disabled
+  :requires flycheck
+  :after (eglot flycheck)
+  :config
+  (global-flycheck-eglot-mode 1))
+#+end_src
+** pckg--gt TODO: tune backend
+#+name: pckg--gt
+#+begin_src emacs-lisp
+(use-package gt ; language translator
+  :disabled
+  :config
+  (setq gt-langs '(en ru))
+  ;; (setq gt-default-translator (gt-translator :engines (gt-google-engine)))
+  ;; (setq gt-default-translator (gt-translator :engines (gt-bing-engine)))
+  (setq gt-default-translator (gt-translator :engines (gt-stardict-engine)))
+ )
+#+end_src
+
+** pckg--projectile
+#+name: pckg--projectile
+#+begin_src emacs-lisp
+(use-package projectile
+  :disabled
+  :bind
+  ("C-x p" . projectile-command-map)
+  ;; :custom
+  ;; (projectile-completion-system 'ivy)
+  :config
+  (projectile-mode 1)
+  (when (and *sys/win32*
+             (executable-find "tr"))
+    (setq projectile-indexing-method 'alien))
+  (add-to-list 'projectile-globally-ignored-directories "node_modules"))
+#+end_src
+
+** pckg--rust-mode
+#+name: pckg--rust-mode
+#+begin_src emacs-lisp
+(use-package rust-mode ; https://elpa.nongnu.org/nongnu/rust-mode.html
+  :mode ("\\.rs\\'" . rust-mode)
+  ;; :hook (rust-mode . eglot-ensure)
+  ;; :config
+  ;; (let ((dot-cargo-bin (expand-file-name "~/.cargo/bin/")))
+    ;; (setq rust-rustfmt-bin (concat dot-cargo-bin "rustfmt")
+          ;; rust-cargo-bin (concat dot-cargo-bin "cargo")
+          ;; rust-format-on-save t))
+  :custom
+  (rust-format-on-save t))
+#+end_src
+** pckg--rustic
+#+name: pckg--rustic
+#+begin_src emacs-lisp :results silent
+(use-package rustic
+  :ensure t
+  :delight "R✧stic"
+  ;; :mode ((rx ".rs" string-end) . rustic-mode)
+  :init
+  ;; (setq rustic-lsp-setup-p nil)
+  ;; (setq rustic-lsp-client 'eglot)
+  :custom
+  (rustic-cargo-use-last-stored-arguments t)
+  (rustic-format-on-save t)
+  :config
+  (which-key-add-key-based-replacements "C-c C-c" "Rustic"))
+(use-package flymake-clippy
+  :ensure t
+  :pin gnu
+  :after (rustic flymake)
+  :hook (rustic-mode . flymake-clippy-setup)
+  :config (add-hook 'rustic-mode-hook #'flymake-mode))
+#+end_src
+** pckg--rust-ext
+#+name: pckg--rust-ext
+#+begin_src emacs-lisp :results silent
+(use-package flymake-clippy
+  :hook
+  (rust-ts-mode . flymake-mode)
+  (rust-ts-mode . flymake-clippy-setup))
+(use-package cargo-mode
+  :delight "C✧rgo"
+  :mode "Cargo.toml\\'"
+  :hook (rust-ts-mode . cargo-minor-mode)
+  :custom
+  (compilation-scroll-output t))
+#+end_src
+** pckg--vterm
+#+name: pckg--vterm
+#+begin_src emacs-lisp :results silent
+(use-package vterm
+  :disabled
+  :commands vterm
+  :config
+  ;; (setq term-prompt-regexp "^[^#$%>\n]*[#$%>] *")  ;; Set this to match your custom shell prompt
+  ;;(setq vterm-shell "zsh")                       ;; Set this to customize the shell to launch
+  (setq vterm-max-scrollback 10000))
+#+end_src
+** pckg--pdf-djvu
+#+name: pckg--pdf-djvu
+#+begin_src emacs-lisp :results silent
+(use-package djvu
+  :ensure t
+  :pin gnu)
+(use-package pdf-tools
+  :ensure t
+  :pin nongnu)
 #+end_src
 * =----------------------------------------=
 * data--copyright

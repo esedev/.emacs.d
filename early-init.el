@@ -43,11 +43,8 @@
   (expand-file-name (format "save/%s" arg) user-emacs-directory))
 (defun cfg/path-t (arg)
   (expand-file-name (format "target/%s/%s" cfg/profile arg) user-emacs-directory))
-
-(defun cfg/set-title-tail (arg)
-  "Set value `cfg/title-tail' as ARG."
-       (concat "  [" arg "]"))
-
+(defun cfg/path-u (arg)
+  (expand-file-name (format "target/%s" arg) user-emacs-directory))
 ;;; micro tuning of Emacs
 ;; (setq frame-title-format '( "GNU/Emacs " cfg/title))
 (setq frame-title-format
@@ -69,13 +66,14 @@
 ;;;;; override custom
 (custom-set-variables
  '(auto-save-default nil)
- '(auto-save-list-file-prefix (cfg/path "target/tmp-auto-save-list/.saves-"))
+ '(auto-save-list-file-prefix (cfg/path-u "tmp-auto-save-list/.saves-"))
  '(create-lockfiles nil)
  '(make-backup-files nil)
+ '(project-list-file (cfg/path-u "projects"))
  '(recentf-mode t) ; use the M-x recentf-open-files command
- '(recentf-save-file (cfg/path-s "recentf"))
+ '(recentf-save-file (cfg/path-u "recentf"))
  '(savehist-mode t)
- '(savehist-file (cfg/path-s "history"))
+ '(savehist-file (cfg/path-u "history"))
  '(use-short-answers t))
 
 (custom-set-variables
@@ -92,10 +90,9 @@
  '(tab-bar-show 100) ; hide if tabs less 100
  '(tool-bar-mode nil)
  '(global-hl-line-mode t) ;;; Подсветка текущей строки
-;;  '(custom-safe-themes t)
  '(visible-bell t)) ; no blink please
 
-;; (load (cfg/path (format "profiles/profile-%s-early" cfg/profile)) 'no-error)
-;; (setq package-enable-at-startup nil)
+(setq package-enable-at-startup nil)    ; must have
+
 (provide 'early-init)
 ;;; early-init.el ends here

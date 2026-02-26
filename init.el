@@ -19,14 +19,14 @@
   (package-archive-priorities '(("gnu" . 10) ("nongnu" . 9)
                                 ("melpa-stable" . 7) ("melpa" . 1)))
   :config
-  ;; (package-initialize)
+  (package-initialize)                  ; must have
   (when (eq cfg/profile 'built-in)
       (setq package-archives nil)))
 (use-package use-package
   :ensure nil
   :custom
   ;; (use-package-always-defer t)
-  (use-package-minimum-reported-time 0.005)
+  (use-package-minimum-reported-time 0.05)
   (use-package-verbose nil))
 ;;;;; end of configure package manager
 
@@ -71,27 +71,20 @@
   (cfg/bind--override-standard)
 
   ;;;
-  ;;; code--my-actions
+  ;;; code--emacs-user-functions
   ;;;
   ;; toggle tab-bar headers visible
-  (defun u--toggle-tab-bar-headers-visible (&optional visible)
+  (defun cfg/toggle-tab-bar-headers-visible (&optional visible)
     "Show/hide headers of tab bar.
      If argument VISIBLE is nil, then toggle visible of headers.
      If argument VISIBLE <= 0, then hide headers.
      If argument VISIBLE > 0, then show headers."
     (interactive)
     (let ((tbs (if visible (if ; <
-                                            (> visible 0) t 100)
-                              (if (eq tab-bar-show t) 100 t))))
+                               (> visible 0) t 100)
+                 (if (eq tab-bar-show t) 100 t))))
       (customize-set-variable 'tab-bar-show tbs))
-    (eq tab-bar-show t)
-    )
-  ;; show daily help
-  (defun u--help-daily-toggle ()
-    "The daily help text, UNIMPLEMENTED."
-    (interactive)
-    (message "User daily help text")
-    (display-buffer "Daily help"))
+    (eq tab-bar-show t))
   ;;;
   ;;; killless-mode
   ;;;
@@ -163,24 +156,18 @@
    '(diary-file (cfg/shelf "diary"))
    )
   ;;;;; C/C++ mode
-  (c-add-style "main"
-               '("gnu"
-                 (c-basic-offset . 4)
-                 ; other
-                 ;; (c-offsets-alist
-                  ;; ()
-                  ;; )
-                 ))
+  (c-add-style "main" '("gnu" (c-basic-offset . 4)))
   (customize-set-variable 'c-default-style '((java-mode . "java") (awk-mode . "awk") (other . "main")))
   ;;;;; hightlight line off
   (dolist (mode '(eshell-mode-hook
                     term-mode-hook
                     shell-mode-hook))
       (add-hook mode (lambda () (hl-line-mode 0))))
-  ;;;;; line-numbers off
+  ;;;;; display-line-numbers off
   (dolist (mode '(eshell-mode-hook
-                  minimap-sb-mode-hook
+                  eww-mode-hook
                   org-mode-hook
+                  minimap-sb-mode-hook
                   term-mode-hook
                   shell-mode-hook
                   treemacs-mode-hook
@@ -228,55 +215,45 @@
 ;;;
 ;;; thms--initialize
 ;;;
-(use-package emacs
-  :init
-  (defvar cfg/available-theme-tags '(None Craft Night Paper Retro)
-    "List of available tags of themes.")
-  (defvar cfg/theme-profile-tags '((actual . Night)
-                                   (built-in . wombat)
-                                   (craft . Craft)
-                                   (devel . None))
-    "Table for selecting a theme by profile.")
-  (defvar cfg/theme-tags '((Craft . misterioso)
-                           (Night . tango-dark)
-                           (Paper . adwaita)
-                           (Retro . deeper-blue))
-    "Table for selecting a theme by tag.")
-  (defun cfg/switch-theme (theme &optional no-confirm no-enable)
-    "Wrapper for `load-theme', load theme ARG."
-    (interactive
-     (list
-      (intern (completing-read "Load custom theme: "
-                               (mapcar #'symbol-name
-				                       (append cfg/available-theme-tags
-                                               (custom-available-themes)))))
-      nil nil))
-    (mapcar #'disable-theme custom-enabled-themes)
-    (cfg/set-title-tail (symbol-name theme))
-    (unless (eq 'None theme)
-      (load-theme (or (alist-get theme cfg/theme-tags) theme) no-confirm no-enable)))
-  :config
-  (unless (member cfg/profile '(built-in devel))
-    (use-package ef-themes
-      :ensure nil
-      :if (package-installed-p 'ef-themes)
-      :config
-      (setq cfg/theme-tags '((Craft . ef-maris-dark)
-                             (Night . ef-night)
-                             (Paper . ef-cyprus)
-                             (Retro . ef-bio)))))
-
-  (cfg/switch-theme (intern-soft (or (getenv "EMAX_THM")
-                                     (alist-get cfg/profile cfg/theme-profile-tags)
-                                     'None)) t))
+(defvar cfg/available-theme-tags '(None Craft Night Paper Retro)
+  "List of available tags of themes.")
+(defvar cfg/theme-profile-tags '((actual . Night)
+                                 (built-in . wombat)
+                                 (craft . Craft)
+                                 (devel . None))
+  "Table for selecting a theme by profile.")
+(defvar cfg/theme-tags '((Craft . misterioso)
+                         (Night . tango-dark)
+                         (Paper . adwaita)
+                         (Retro . deeper-blue))
+  "Table for selecting a theme by tag.")
+(defun cfg/switch-theme (theme &optional no-confirm no-enable)
+  "Wrapper for `load-theme', load theme ARG."
+  (interactive
+   (list
+    (intern (completing-read "Load custom theme: "
+                             (mapcar #'symbol-name
+				                     (append cfg/available-theme-tags
+                                             (custom-available-themes)))))
+    nil nil))
+  (mapcar #'disable-theme custom-enabled-themes)
+  (unless (eq 'None theme)
+    (load-theme (or (alist-get theme cfg/theme-tags) theme) no-confirm no-enable)))
+;; override theme tags
+(when (and (member cfg/profile '(actual craft)) (package-installed-p 'ef-themes))
+  (setq cfg/theme-tags '((Craft . ef-maris-dark)
+                         (Night . ef-night)
+                         (Paper . ef-cyprus)
+                         (Retro . ef-bio))))
+;; load theme
+(cfg/switch-theme (intern-soft (or (getenv "EMAX_THM")
+                                   (alist-get cfg/profile cfg/theme-profile-tags)
+                                   'None)) t)
 
 ;;; load profile
 (load (cfg/path (format "profiles/profile-%s" cfg/profile)))
 
 (load (cfg/path "data/help-quick-custom"))
-
-;;; deferred activations
-;; (which-key-mode)
 
 (provide 'init)
 ;;; init.el ends here

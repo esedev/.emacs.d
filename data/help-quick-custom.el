@@ -29,6 +29,7 @@
          (isearch-backward . "reverse search")
          (query-replace . "search & replace") (fill-paragraph . "reformat")
          (shell-command "sh cmd")
+         (read-only-mode . "readonly")
          (save-buffers-kill-terminal . "exit"))
         ;; ("File" (find-file . "find")
          ;; (save-buffer . "save")

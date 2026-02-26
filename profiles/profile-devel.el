@@ -40,7 +40,7 @@
     :doc "Config"
     "1" '("Config" . (lambda () (interactive) (find-file (cfg/path "Config.org"))))
     ;; "1" '("Config" . (i-event (find-file (cfg/path "Config.org"))))
-    "2" '("Cfg directory" . (lambda () (interactive) (find-file (cfg/path ""))))
+    "2" '("Cfg directory" . (lambda () (interactive) (project-switch-project (cfg/path ""))))
     "3" '("Emacs early-init.el" . (lambda () (interactive) (find-file early-init-file)))
     "4" '("Emacs init.el" . (lambda () (interactive) (find-file user-init-file)))
     "5" '("Emacs custom-file" . (lambda () (interactive)
@@ -110,18 +110,18 @@
     )
   )
 
-(use-package desktop
-  :ensure nil
-  :custom
-  (desktop-dirname (cfg/path-s "desktop") "Каталог для хранения файла .desktop.")
-  ;; (desktop-load-locked-desktop t "Загрузка файла .desktop даже если он заблокирован.")
-  (desktop-restore-frames t "Восстанавливать фреймы.")
-  (desktop-save t "Сохранять список открытых буферов, файлов и т. д. без лишних вопросов.")
-  ;; :hook (after-init . desktop-read)
-  :config
-  ;; (desktop-save-mode t)
-  ;; (add-to-list 'delete-frame-functions 'desktop-save)
-  (add-to-list 'desktop-modes-not-to-save 'dired-mode))
+;; (use-package desktop
+;;   :ensure nil
+;;   :custom
+;;   (desktop-dirname (cfg/path-u "desktop") "Каталог для хранения файла .desktop.")
+;;   ;; (desktop-load-locked-desktop t "Загрузка файла .desktop даже если он заблокирован.")
+;;   (desktop-restore-frames t "Восстанавливать фреймы.")
+;;   (desktop-save t "Сохранять список открытых буферов, файлов и т. д. без лишних вопросов.")
+;;   ;; :hook (after-init . desktop-read)
+;;   :config
+;;   ;; (desktop-save-mode t)
+;;   ;; (add-to-list 'delete-frame-functions 'desktop-save)
+;;   (add-to-list 'desktop-modes-not-to-save 'dired-mode))
 (use-package dired
   :ensure nil
   :delight "Dir"
@@ -156,16 +156,19 @@
       (with-current-buffer buf
         (insert html)
         (goto-char (point-min))
-        (eww-display-html 'utf-8 source nil nil buf))
+        (eww-display-html 'utf-8 source nil (point-min) buf))
       (switch-to-buffer buf)))
   :config
-  (keymap-set cfg/kmap-user-shelf "<f1>"
+  (setq eww-search-prefix "https://lite.duckduckgo.com/lite/?q=")
+  (keymap-set cfg/kmap-user-shelf "<f2>"
               '("Руководство по GNU Emacs" .
                 (lambda ()(interactive)(eww "https://alexott.net/ru/emacs/emacs-manual/"))))
   (keymap-set cfg/kmap-user-shelf "<f3>"
               `("Поиск в сети" .
-                (lambda ()(interactive)(eww "https://lite.duckduckgo.com"))))
-  )
+                (lambda ()(interactive)(eww "https://lite.duckduckgo.com/lite"))))
+  (keymap-set cfg/kmap-user-shelf "<f4>"
+              '("eww: текущий буфер" .
+                eww-render-buffer)))
 (use-package org
   :ensure nil
   :pin manual
@@ -179,13 +182,13 @@
     (visual-line-mode 1))
   (defun cfg/org (arg)
     "Return path to ARG file."
-    (expand-file-name arg org-directory)
-    )
+    (expand-file-name arg (cfg/shelf "org-arium")))
   (keymap-set cfg/kmap-open-entities "a" '("agenda" . org-agenda))
   (keymap-set cfg/kmap-open-entities "s" '("schedule" . org-agenda-list))
   :bind-keymap
   ("C-c o" . org-mode-map)
   :custom
+  (org-directory (cfg/org ""))
   (org-startup-folded 'overview)
   (org-edit-src-content-indentation 0)
   (org-agenda-current-time-string "← now ———————————————————— ☢")
@@ -561,10 +564,6 @@
                                      ;; (consult-ag (:not posframe))
                                      (t posframe)))
   (vertico-posframe-mode 1))
-;;;
-;;; role--emacs
-;;;
-;;;;; cozy
 (use-package hydra ; short bindings with a common prefix (GNU)
   :ensure t
   :pin gnu
@@ -599,42 +598,7 @@
   
     ("U" user-trmap-mode)
     ("k" killless-mode))
-  (defhydra hydra--text-scale(:timeout 10)
-    "scale text"
-    ("i" text-scale-increase "in")
-    ("k" text-scale-decrease "out")
-    ("q" nil "finished", :exit t))
-  (defhydra hydra--window-move(:hint nil)
-    "
-    ^Window^   ^Manual^         ^Auto^             ^Navigation^
-    ^------^---^------^---------^----^-------------^----------^^^^^^-
-    _q_ quit   _I_ ↑ increase   _-_ by buffer      ^    _p_
-    ^^         _K_ ↓ decrease   _+_ balance          _a_ ✦ _f_
-    ^^         _J_ → shrink ←   _g_ golden ratio   ^    _n_
-    ^^         _L_ ← expand →   ^^                 ^----------^^^^^^-
-    "
-    ("I" enlarge-window nil)
-    ("K" shrink-window nil)
-    ("J" shrink-window-horizontally nil)
-    ("L" enlarge-window-horizontally nil)
-    ("-" shrink-window-if-larger-than-buffer nil)
-    ("+" balance-windows nil)
-    ("=" balance-windows nil)
-    ("g" golden-ratio)
-    ("a" windmove-left nil)
-    ("b" windmove-left nil)
-    ("p" windmove-up nil)
-    ("n" windmove-down nil)
-    ("f" windmove-right nil)
-    ("e" windmove-right nil)
-    ("C-a" windmove-left nil)
-    ("C-b" windmove-left nil)
-    ("C-p" windmove-up nil)
-    ("C-n" windmove-down nil)
-    ("C-f" windmove-right nil)
-    ("C-e" windmove-right nil)
-    ("q" nil)
-    )
+  
   (defhydra hydra--play-games (:hint nil :color blue)
     "
     ^
@@ -681,25 +645,6 @@
   
   (keymap-global-set "M-O" 'hydra--window-move/body); window move
 )
-(use-package yasnippet
-  :ensure t
-  :pin gnu
-  :delight (yas-minor-mode " Ya")
-  :init
-  (use-package yasnippet-snippets
-    :ensure t
-    :pin nongnu
-    :requires yasnippet
-    :after yasnippet
-    )
-  :config
-  (setq yas-snippet-dirs
-      (list (cfg/path "data/snippets") ; personal snippets
-            yasnippet-snippets-dir
-        ))
-  (yas-reload-all)
-  (which-key-add-key-based-replacements "C-c &" "Yas")
-  :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode))
 (use-package ace-window
   :ensure t
   :pin gnu
@@ -729,218 +674,47 @@
   :ensure t
   :pin nongnu
   :hook (prog-mode . rainbow-delimiters-mode)) ; to their depth
-(use-package xclip ; copy/paste in terminal
-  :ensure t
-  :pin gnu
-  :unless (display-graphic-p)
-  :config (xclip-mode 1))
-(use-package emacs
-  :ensure nil
-  )
-(use-package emms                       ; emacs multimedia service
-  :ensure t
-  :pin gnu)
-;; (use-package gt)   ; language translator
-(use-package nov                        ; epub reader
-  :ensure t
-  :pin nongnu
-  :mode ("\\.epub\\'". nov-mode))
-(use-package tmr                        ; timers
-  :ensure t
-  :pin gnu
-  :init
-  (keymap-set cfg/kmap-open-entities "t" '("timers" . tmr-tabulated-view))
-  :config
-  (setq tmr-sound-file (cfg/path "data/sound/alert.ogg")))
-;;;;; org
-(use-package org-modern
-  :ensure t
-  :pin gnu
-  :if (display-graphic-p)
-  :after org
-  :custom
-  (org-modern-replace-stars "◉○✦✧▪▫º") ; ◉○✦✧▪▫º ⦿◎◉○✳
-  (org-modern-star 'replace)
-  :config
-  ;; Option 1: Per buffer
-  (add-hook 'org-mode-hook #'org-modern-mode)
-  (add-hook 'org-agenda-finalize-hook #'org-modern-agenda)
-  ;; Option 2: Globally
-  ;; (with-eval-after-load 'org (global-org-modern-mode))
-  )
-(use-package htmlize
-  :ensure t
-  :pin nongnu)
-;;;;; files
-;;;;; ui
-(use-package fontaine
-  :ensure t
-  :pin gnu
-  :defer t
-  :if (display-graphic-p)
-  :init
-  (keymap-set cfg/kmap-update-ui "f" '("fontaine" . fontaine-set-preset))
-  :config
-  (setq fontaine-presets
-        '((regular)
-          (code
-           :default-family "Source Code Pro"
-           :default-weight normal)
-          (code-small
-           :inherit code
-           :default-height 80)
-          (code-large
-           :inherit code
-           :default-height 160
-           :variable-pitch-height 1.0
-           :tab-bar-height 0.9)
-          (educational-board
-           :default-family "Roboto Regular"
-           :default-height 240
-           :variable-pitch-height 1.0
-           :tab-bar-height 0.7)
-          (t
-           ;; <https://protesilaos.com/emacs/fontaine>.
-           :default-family "Adwaita Mono Regular"
-           :default-weight regular :default-slant normal :default-width normal
-           :default-height 120
-           :fixed-pitch-family "Adwaita Mono Regular" :fixed-pitch-weight nil
-           :fixed-pitch-slant nil :fixed-pitch-width nil :fixed-pitch-height 1.0 :fixed-pitch-serif-family nil :fixed-pitch-serif-weight nil
-           :fixed-pitch-serif-slant nil :fixed-pitch-serif-width nil
-           :fixed-pitch-serif-height 1.0 :variable-pitch-family "Sans"
-           :variable-pitch-weight nil :variable-pitch-slant nil
-           :variable-pitch-width nil :variable-pitch-height 1.0
-           :mode-line-active-family nil :mode-line-active-weight nil
-           :mode-line-active-slant nil :mode-line-active-width nil
-           :mode-line-active-height 1.0 :mode-line-inactive-family nil
-           :mode-line-inactive-weight nil :mode-line-inactive-slant nil
-           :mode-line-inactive-width nil :mode-line-inactive-height 1.0
-           :header-line-family nil :header-line-weight nil :header-line-slant nil :header-line-width nil :header-line-height 1.0
-           :line-number-family nil :line-number-weight nil :line-number-slant nil :line-number-width nil :line-number-height 1.0 :tab-bar-family nil :tab-bar-weight nil :tab-bar-slant nil :tab-bar-width nil
-           :tab-bar-height 1.0 :tab-line-family nil :tab-line-weight nil
-           :tab-line-slant nil :tab-line-width nil :tab-line-height 1.0
-           :bold-family nil :bold-slant nil :bold-weight bold :bold-width nil
-           :bold-height 1.0 :italic-family nil :italic-weight nil
-           :italic-slant italic :italic-width nil :italic-height 1.0
-           :line-spacing nil
-           )
-          ))
-  (setq frame-inhibit-implied-resize t)
-  (fontaine-set-preset 'regular)
-  (add-hook 'enable-theme-functions #'fontaine-apply-current-preset)
-  (fontaine-mode 1)
-  )
-(use-package spacious-padding
-  :ensure t
-  :pin gnu
-  :defer
-  :if (display-graphic-p)
-  :init
-  (keymap-set cfg/kmap-update-ui "p" '("paddings" . spacious-padding-mode))
-  :config
-  (setq spacious-padding-subtle-mode-line nil)
-  ;; (setq spacious-padding-subtle-mode-line
-  ;;     '(:mode-line-active error :mode-line-inactive shadow))
-  ;; (setq spacious-padding-subtle-mode-line
-  ;;     '(:mode-line-active "#0000ff" :mode-line-inactive "gray50"))
-  (setq spacious-padding-widths
-        '( :internal-border-width 20
-           :header-line-width 10
-           :mode-line-width 6
-           :tab-width 4
-           :right-divider-width 30
-           :scroll-bar-width 8
-           :fringe-width 8)))
-(use-package all-the-icons
-  :ensure t
-  :if (display-graphic-p))
-(use-package all-the-icons-dired
-  :ensure t
-  :requires all-the-icons
-  :if (display-graphic-p)
-  :hook (dired-mode . all-the-icons-dired-mode))
-(use-package ef-themes
-  :ensure t
-  :pin gnu)
-(use-package treemacs
-  :ensure t
-  :requires (ace-window hydra)
-  :after (ace-window hydra)
-  :defer t
-  :init
-  (use-package treemacs-all-the-icons
-    :ensure t
-    :requires (treemacs all-the-icons)
-    :if (display-graphic-p)
-    )
-  :bind (:map cfg/kmap-minor-menu
-              ("t" . treemacs)
-              ("C-t" . treemacs-select-window))
-  :custom
-  (treemacs-show-hidden-files t)
-  (treemacs-persist-file (cfg/path-s ".cache/treemacs-persist"))
-  :config
-  (treemacs-follow-mode t)
-  (treemacs-filewatch-mode t)
-  (treemacs-fringe-indicator-mode nil)
-  (treemacs-git-mode 'simple)
-  (treemacs-hide-gitignored-files-mode t)
-  (treemacs-project-follow-mode t)
-  (treemacs-filewatch-mode t)
 
-  (which-key-add-key-based-replacements "C-c C-p" "treemacs prj")
-  (which-key-add-key-based-replacements "C-c C-p c" "collapse")
-  (which-key-add-key-based-replacements "C-c C-w" "treemacs wsp"))
-(use-package treemacs-magit
-  :ensure t
-  :requires (treemacs magit)
-  )
-(use-package mines
-  :ensure t
-  :pin gnu)
-(use-package fireplace :ensure t)       ; melpa-stable
-(use-package 2048-game :ensure t)       ; melpa
-;;;;;
 
-;;;
-;;; role--experimental
-;;;
-
-;;;
-;;; role--yard-of-test
-;;;
-(use-package flycheck
-  :ensure t
-  :hook (after-init . global-flycheck-mode)
-  :config
-  (keymap-set cfg/kmap-craft-menu "f" flycheck-command-map)
-  (which-key-add-key-based-replacements "C-c !" "Flycheck")
-  (which-key-add-key-based-replacements "C-. f" "Flycheck"))
-(use-package lsp-mode
-  :ensure t
-  :init
-  (defun cfg/lsp-mode-setup ()
-      (keymap-set cfg/kmap-craft-menu "m" '("imenu" . lsp-ui-imenu)))
-  :hook (lsp-mode . cfg/lsp-mode-setup)
-  :custom (lsp-keymap-prefix "C-. l")
-  )
-(with-eval-after-load 'lsp-mode
-  (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
-(use-package lsp-treemacs
-  :ensure t
-  :requires (lsp-mode treemacs)
-  :after lsp-mode)
-(use-package lsp-ui
-  :ensure t
-  :requires lsp-mode)
-(use-package rustic
-  :ensure t
-  :delight "R✧stic!"
-  :custom
-  (rustic-cargo-use-last-stored-arguments t)
-  (rustic-format-on-save t)
-  :config
-  (which-key-add-key-based-replacements "C-c C-c" "Rustic"))
+;; ;;;
+;; ;;; role--experimental
+;; ;;;
+;; 
+;; ;;;
+;; ;;; role--yard-of-test
+;; ;;;
+;; (use-package flycheck
+;;   :ensure t
+;;   :hook (after-init . global-flycheck-mode)
+;;   :config
+;;   (keymap-set cfg/kmap-craft-menu "f" flycheck-command-map)
+;;   (which-key-add-key-based-replacements "C-c !" "Flycheck")
+;;   (which-key-add-key-based-replacements "C-. f" "Flycheck"))
+;; (use-package lsp-mode
+;;   :ensure t
+;;   :init
+;;   (defun cfg/lsp-mode-setup ()
+;;       (keymap-set cfg/kmap-craft-menu "m" '("imenu" . lsp-ui-imenu)))
+;;   :hook (lsp-mode . cfg/lsp-mode-setup)
+;;   :custom (lsp-keymap-prefix "C-. l")
+;;   )
+;; (with-eval-after-load 'lsp-mode
+;;   (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
+;; (use-package lsp-treemacs
+;;   :ensure t
+;;   :requires (lsp-mode treemacs)
+;;   :after lsp-mode)
+;; (use-package lsp-ui
+;;   :ensure t
+;;   :requires lsp-mode)
+;; (use-package rustic
+;;   :ensure t
+;;   :delight "R✧stic!"
+;;   :custom
+;;   (rustic-cargo-use-last-stored-arguments t)
+;;   (rustic-format-on-save t)
+;;   :config
+;;   (which-key-add-key-based-replacements "C-c C-c" "Rustic"))
 
 (provide 'profile-devel)
 ;;; profile-devel.el ends here

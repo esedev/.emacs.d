@@ -39,7 +39,7 @@
     :doc "Config"
     "1" '("Config" . (lambda () (interactive) (find-file (cfg/path "Config.org"))))
     ;; "1" '("Config" . (i-event (find-file (cfg/path "Config.org"))))
-    "2" '("Cfg directory" . (lambda () (interactive) (find-file (cfg/path ""))))
+    "2" '("Cfg directory" . (lambda () (interactive) (project-switch-project (cfg/path ""))))
     "3" '("Emacs early-init.el" . (lambda () (interactive) (find-file early-init-file)))
     "4" '("Emacs init.el" . (lambda () (interactive) (find-file user-init-file)))
     "5" '("Emacs custom-file" . (lambda () (interactive)
@@ -109,18 +109,18 @@
     )
   )
 
-(use-package desktop
-  :ensure nil
-  :custom
-  (desktop-dirname (cfg/path-s "desktop") "Каталог для хранения файла .desktop.")
-  ;; (desktop-load-locked-desktop t "Загрузка файла .desktop даже если он заблокирован.")
-  (desktop-restore-frames t "Восстанавливать фреймы.")
-  (desktop-save t "Сохранять список открытых буферов, файлов и т. д. без лишних вопросов.")
-  ;; :hook (after-init . desktop-read)
-  :config
-  ;; (desktop-save-mode t)
-  ;; (add-to-list 'delete-frame-functions 'desktop-save)
-  (add-to-list 'desktop-modes-not-to-save 'dired-mode))
+;; (use-package desktop
+;;   :ensure nil
+;;   :custom
+;;   (desktop-dirname (cfg/path-u "desktop") "Каталог для хранения файла .desktop.")
+;;   ;; (desktop-load-locked-desktop t "Загрузка файла .desktop даже если он заблокирован.")
+;;   (desktop-restore-frames t "Восстанавливать фреймы.")
+;;   (desktop-save t "Сохранять список открытых буферов, файлов и т. д. без лишних вопросов.")
+;;   ;; :hook (after-init . desktop-read)
+;;   :config
+;;   ;; (desktop-save-mode t)
+;;   ;; (add-to-list 'delete-frame-functions 'desktop-save)
+;;   (add-to-list 'desktop-modes-not-to-save 'dired-mode))
 (use-package dired
   :ensure nil
   :delight "Dir"
@@ -155,16 +155,19 @@
       (with-current-buffer buf
         (insert html)
         (goto-char (point-min))
-        (eww-display-html 'utf-8 source nil nil buf))
+        (eww-display-html 'utf-8 source nil (point-min) buf))
       (switch-to-buffer buf)))
   :config
-  (keymap-set cfg/kmap-user-shelf "<f1>"
+  (setq eww-search-prefix "https://lite.duckduckgo.com/lite/?q=")
+  (keymap-set cfg/kmap-user-shelf "<f2>"
               '("Руководство по GNU Emacs" .
                 (lambda ()(interactive)(eww "https://alexott.net/ru/emacs/emacs-manual/"))))
   (keymap-set cfg/kmap-user-shelf "<f3>"
               `("Поиск в сети" .
-                (lambda ()(interactive)(eww "https://lite.duckduckgo.com"))))
-  )
+                (lambda ()(interactive)(eww "https://lite.duckduckgo.com/lite"))))
+  (keymap-set cfg/kmap-user-shelf "<f4>"
+              '("eww: текущий буфер" .
+                eww-render-buffer)))
 (use-package org
   :ensure nil
   :pin manual
@@ -178,13 +181,13 @@
     (visual-line-mode 1))
   (defun cfg/org (arg)
     "Return path to ARG file."
-    (expand-file-name arg org-directory)
-    )
+    (expand-file-name arg (cfg/shelf "org-arium")))
   (keymap-set cfg/kmap-open-entities "a" '("agenda" . org-agenda))
   (keymap-set cfg/kmap-open-entities "s" '("schedule" . org-agenda-list))
   :bind-keymap
   ("C-c o" . org-mode-map)
   :custom
+  (org-directory (cfg/org ""))
   (org-startup-folded 'overview)
   (org-edit-src-content-indentation 0)
   (org-agenda-current-time-string "← now ———————————————————— ☢")
@@ -286,26 +289,14 @@
                     [92 9])))
   ;; delete trailing whitespaces when save buffer
   (add-to-list 'write-file-functions 'delete-trailing-whitespace))
-(when (fboundp 'auto-complete)
-  (ac-config-default)
-  )
-(when (fboundp 'company-mode)
-  (global-company-mode 1)
-  )
-(when (fboundp 'magit-status-mode)
-  (use-package magit
-    :ensure t
-    :pin nongnu
-    :custom
-    (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
-  )
 (use-package flymake
   :ensure nil
   :custom
-  (flymake-no-changes-timeout 1.2)
-  :hook((emacs-lisp-mode . flymake-mode)))
+  (flymake-no-changes-timeout 1.2))
+  ;; :hook((emacs-lisp-mode . flymake-mode)))
 (use-package eglot
   :ensure nil
+  :defer t
   :init
   (defun cfg//remap-major-modes ()
     (push '(ruby-mode ruby-ts-mode) major-mode-remap-alist)
@@ -329,6 +320,7 @@
   ;; (add-to-list 'eglot-stay-out-of 'flymake)
   )
 (use-package rust-ts-mode
+  :ensure nil
   :delight "R✧st"
   :mode "\\.rs\\'"
   :hook
@@ -336,9 +328,6 @@
 (cfg//remap-major-modes)
 
 (cfg//ido-mode-setup)
-
-(when (fboundp 'company-mode)
-  (company-mode 1))
 
 (provide 'profile-built-in)
 ;;; profile-built-in.el ends here

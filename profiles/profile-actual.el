@@ -39,7 +39,7 @@
     :doc "Config"
     "1" '("Config" . (lambda () (interactive) (find-file (cfg/path "Config.org"))))
     ;; "1" '("Config" . (i-event (find-file (cfg/path "Config.org"))))
-    "2" '("Cfg directory" . (lambda () (interactive) (find-file (cfg/path ""))))
+    "2" '("Cfg directory" . (lambda () (interactive) (project-switch-project (cfg/path ""))))
     "3" '("Emacs early-init.el" . (lambda () (interactive) (find-file early-init-file)))
     "4" '("Emacs init.el" . (lambda () (interactive) (find-file user-init-file)))
     "5" '("Emacs custom-file" . (lambda () (interactive)
@@ -109,18 +109,18 @@
     )
   )
 
-(use-package desktop
-  :ensure nil
-  :custom
-  (desktop-dirname (cfg/path-s "desktop") "Каталог для хранения файла .desktop.")
-  ;; (desktop-load-locked-desktop t "Загрузка файла .desktop даже если он заблокирован.")
-  (desktop-restore-frames t "Восстанавливать фреймы.")
-  (desktop-save t "Сохранять список открытых буферов, файлов и т. д. без лишних вопросов.")
-  ;; :hook (after-init . desktop-read)
-  :config
-  ;; (desktop-save-mode t)
-  ;; (add-to-list 'delete-frame-functions 'desktop-save)
-  (add-to-list 'desktop-modes-not-to-save 'dired-mode))
+;; (use-package desktop
+;;   :ensure nil
+;;   :custom
+;;   (desktop-dirname (cfg/path-u "desktop") "Каталог для хранения файла .desktop.")
+;;   ;; (desktop-load-locked-desktop t "Загрузка файла .desktop даже если он заблокирован.")
+;;   (desktop-restore-frames t "Восстанавливать фреймы.")
+;;   (desktop-save t "Сохранять список открытых буферов, файлов и т. д. без лишних вопросов.")
+;;   ;; :hook (after-init . desktop-read)
+;;   :config
+;;   ;; (desktop-save-mode t)
+;;   ;; (add-to-list 'delete-frame-functions 'desktop-save)
+;;   (add-to-list 'desktop-modes-not-to-save 'dired-mode))
 (use-package dired
   :ensure nil
   :delight "Dir"
@@ -155,16 +155,19 @@
       (with-current-buffer buf
         (insert html)
         (goto-char (point-min))
-        (eww-display-html 'utf-8 source nil nil buf))
+        (eww-display-html 'utf-8 source nil (point-min) buf))
       (switch-to-buffer buf)))
   :config
-  (keymap-set cfg/kmap-user-shelf "<f1>"
+  (setq eww-search-prefix "https://lite.duckduckgo.com/lite/?q=")
+  (keymap-set cfg/kmap-user-shelf "<f2>"
               '("Руководство по GNU Emacs" .
                 (lambda ()(interactive)(eww "https://alexott.net/ru/emacs/emacs-manual/"))))
   (keymap-set cfg/kmap-user-shelf "<f3>"
               `("Поиск в сети" .
-                (lambda ()(interactive)(eww "https://lite.duckduckgo.com"))))
-  )
+                (lambda ()(interactive)(eww "https://lite.duckduckgo.com/lite"))))
+  (keymap-set cfg/kmap-user-shelf "<f4>"
+              '("eww: текущий буфер" .
+                eww-render-buffer)))
 (use-package org
   :ensure nil
   :pin manual
@@ -178,13 +181,13 @@
     (visual-line-mode 1))
   (defun cfg/org (arg)
     "Return path to ARG file."
-    (expand-file-name arg org-directory)
-    )
+    (expand-file-name arg (cfg/shelf "org-arium")))
   (keymap-set cfg/kmap-open-entities "a" '("agenda" . org-agenda))
   (keymap-set cfg/kmap-open-entities "s" '("schedule" . org-agenda-list))
   :bind-keymap
   ("C-c o" . org-mode-map)
   :custom
+  (org-directory (cfg/org ""))
   (org-startup-folded 'overview)
   (org-edit-src-content-indentation 0)
   (org-agenda-current-time-string "← now ———————————————————— ☢")
@@ -598,42 +601,7 @@
   
     ("U" user-trmap-mode)
     ("k" killless-mode))
-  (defhydra hydra--text-scale(:timeout 10)
-    "scale text"
-    ("i" text-scale-increase "in")
-    ("k" text-scale-decrease "out")
-    ("q" nil "finished", :exit t))
-  (defhydra hydra--window-move(:hint nil)
-    "
-    ^Window^   ^Manual^         ^Auto^             ^Navigation^
-    ^------^---^------^---------^----^-------------^----------^^^^^^-
-    _q_ quit   _I_ ↑ increase   _-_ by buffer      ^    _p_
-    ^^         _K_ ↓ decrease   _+_ balance          _a_ ✦ _f_
-    ^^         _J_ → shrink ←   _g_ golden ratio   ^    _n_
-    ^^         _L_ ← expand →   ^^                 ^----------^^^^^^-
-    "
-    ("I" enlarge-window nil)
-    ("K" shrink-window nil)
-    ("J" shrink-window-horizontally nil)
-    ("L" enlarge-window-horizontally nil)
-    ("-" shrink-window-if-larger-than-buffer nil)
-    ("+" balance-windows nil)
-    ("=" balance-windows nil)
-    ("g" golden-ratio)
-    ("a" windmove-left nil)
-    ("b" windmove-left nil)
-    ("p" windmove-up nil)
-    ("n" windmove-down nil)
-    ("f" windmove-right nil)
-    ("e" windmove-right nil)
-    ("C-a" windmove-left nil)
-    ("C-b" windmove-left nil)
-    ("C-p" windmove-up nil)
-    ("C-n" windmove-down nil)
-    ("C-f" windmove-right nil)
-    ("C-e" windmove-right nil)
-    ("q" nil)
-    )
+  
   (defhydra hydra--play-games (:hint nil :color blue)
     "
     ^
@@ -684,6 +652,7 @@
   :ensure t
   :pin gnu
   :delight (yas-minor-mode " Ya")
+  :defer t
   :init
   (use-package yasnippet-snippets
     :ensure t
@@ -698,7 +667,8 @@
         ))
   (yas-reload-all)
   (which-key-add-key-based-replacements "C-c &" "Yas")
-  :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode))
+  :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
+  )
 (use-package ace-window
   :ensure t
   :pin gnu
@@ -728,25 +698,20 @@
   :ensure t
   :pin nongnu
   :hook (prog-mode . rainbow-delimiters-mode)) ; to their depth
-(use-package xclip ; copy/paste in terminal
-  :ensure t
-  :pin gnu
-  :unless (display-graphic-p)
-  :config (xclip-mode 1))
-(use-package emacs
-  :ensure nil
-  )
 (use-package emms                       ; emacs multimedia service
   :ensure t
-  :pin gnu)
+  :pin gnu
+  :defer t)
 ;; (use-package gt)   ; language translator
 (use-package nov                        ; epub reader
   :ensure t
   :pin nongnu
+  :defer t
   :mode ("\\.epub\\'". nov-mode))
 (use-package tmr                        ; timers
   :ensure t
   :pin gnu
+  :defer t
   :init
   (keymap-set cfg/kmap-open-entities "t" '("timers" . tmr-tabulated-view))
   :config
@@ -832,7 +797,7 @@
 (use-package spacious-padding
   :ensure t
   :pin gnu
-  :defer
+  :defer t
   :if (display-graphic-p)
   :init
   (keymap-set cfg/kmap-update-ui "p" '("paddings" . spacious-padding-mode))
@@ -852,10 +817,10 @@
            :fringe-width 8)))
 (use-package all-the-icons
   :ensure t
-  :if (display-graphic-p))
+  :if (display-graphic-p)
+  )
 (use-package all-the-icons-dired
   :ensure t
-  :requires all-the-icons
   :if (display-graphic-p)
   :hook (dired-mode . all-the-icons-dired-mode))
 (use-package ef-themes
@@ -877,7 +842,7 @@
               ("C-t" . treemacs-select-window))
   :custom
   (treemacs-show-hidden-files t)
-  (treemacs-persist-file (cfg/path-s ".cache/treemacs-persist"))
+  (treemacs-persist-file (cfg/path-u ".cache/treemacs-persist"))
   :config
   (treemacs-follow-mode t)
   (treemacs-filewatch-mode t)
@@ -892,13 +857,20 @@
   (which-key-add-key-based-replacements "C-c C-w" "treemacs wsp"))
 (use-package treemacs-magit
   :ensure t
+  :defer t
+  :after (treemacs magit)
   :requires (treemacs magit)
   )
 (use-package mines
   :ensure t
-  :pin gnu)
-(use-package fireplace :ensure t)       ; melpa-stable
-(use-package 2048-game :ensure t)       ; melpa
+  :pin gnu
+  :defer t)
+(use-package fireplace                  ; melpa-stable
+  :ensure t
+  :defer t)
+(use-package 2048-game                  ; melpa
+  :ensure t
+  :defer t)
 ;;;;;
 ;;;
 ;;; role--ide-native
@@ -906,15 +878,17 @@
 (use-package magit
   :ensure t
   :pin nongnu
+  :defer t
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 (use-package flymake
   :ensure nil
   :custom
-  (flymake-no-changes-timeout 1.2)
-  :hook((emacs-lisp-mode . flymake-mode)))
+  (flymake-no-changes-timeout 1.2))
+  ;; :hook((emacs-lisp-mode . flymake-mode)))
 (use-package eglot
   :ensure nil
+  :defer t
   :init
   (defun cfg//remap-major-modes ()
     (push '(ruby-mode ruby-ts-mode) major-mode-remap-alist)
@@ -938,6 +912,7 @@
   ;; (add-to-list 'eglot-stay-out-of 'flymake)
   )
 (use-package rust-ts-mode
+  :ensure nil
   :delight "R✧st"
   :mode "\\.rs\\'"
   :hook
