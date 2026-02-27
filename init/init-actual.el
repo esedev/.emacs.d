@@ -163,16 +163,13 @@
   :ensure nil
   :pin manual
   :defer t
-  :hook  (org-mode . u-hook--org-mode-setup)
+  :hook  (org-mode . cfg//hook--org-mode)
   :init
-  (defun u-hook--org-mode-setup ()
+  (defun cfg//hook--org-mode ()
     "Minor modes tunning."
     (org-indent-mode 1)
     (variable-pitch-mode 0)
     (visual-line-mode 1))
-  (defun cfg/org (arg)
-    "Return path to ARG file."
-    (expand-file-name arg (cfg/shelf "org-arium")))
   (keymap-set cfg/kmap-open-entities "a" '("agenda" . org-agenda))
   (keymap-set cfg/kmap-open-entities "s" '("schedule" . org-agenda-list))
   :bind-keymap
@@ -515,19 +512,6 @@
   (completion-category-overrides '((file (styles basic partial-completion)))))
 (use-package vertico
   :ensure t
-  :init
-  (use-package vertico-multiform
-    :ensure nil
-    :after vertico
-    :config
-    (setq vertico-multiform-categories
-          '((file grid reverse)
-            (consult-location buffer)
-            (consult-grep buffer)
-            (minor-mode reverse)
-            (imenu buffer)
-            (t unobtrusive)))
-    :hook (after-init . vertico-multiform-mode))
   :config
   ;; Different scroll margin
   ;; (setq vertico-scroll-margin 0)
@@ -539,21 +523,27 @@
   (setq vertico-cycle t)
   (keymap-set vertico-map "C-l" #'vertico-exit)
   (vertico-mode 1))
+(use-package vertico-multiform
+  :ensure nil
+  :config
+  (setq vertico-multiform-categories
+        '((file grid reverse)
+          (consult-location buffer)
+          (consult-grep buffer)
+          (minor-mode reverse)
+          (imenu buffer)
+          (t unobtrusive)))
+  (setq vertico-multiform-commands '((consult-line (:not posframe))
+                                     (t posframe)))
+  :hook (after-init . vertico-multiform-mode))
+(use-package posframe :ensure t)
 (use-package vertico-posframe
   :ensure t
-  :preface
-  (use-package posframe :ensure t)
   :requires (vertico posframe)
   :after vertico
   :custom
-  (vertico-posframe-parameters '((left-fringe . 8) (right-fringe . 8)))
-  :config
-  (setq vertico-multiform-commands '(
-                                     (consult-line (:not posframe))
-                                     ;; (gopar/consult-line (:not posframe))
-                                     ;; (consult-ag (:not posframe))
-                                     (t posframe)))
-  (vertico-posframe-mode 1))
+  (vertico-posframe-parameters '((left-fringe . 8) (right-fringe . 8))))
+
 ;;;
 ;;; role--emacs
 ;;;
@@ -570,12 +560,13 @@
     ^------^---^-----^--------------^--^---------------^------^---
     _q_ quit   _h_ highlight line   _f_ fontaine       _m_ menu
     ^^         _l_ long line wrap   _g_ golden ratio   _t_ treemacs
-    _U_ ⌘      _w_ whitespaces      _o_ org modern     _T_ tab headers
-    _k_ ⛨ ^^                        _p_ paddings       _W_ Win tabs
+    ^^         _w_ whitespaces      _o_ org modern     _T_ tab headers
+    _U_ ⌘   ^^                      _p_ paddings       _W_ Win tabs
+    _k_ LLL ^^                      _V_ V. posframe
     "
     ("q" nil)
   
-    ("h" global-hl-line-mode)
+    ("h" hl-line-mode)
     ("l" visual-line-mode)
     ("w" whitespace-mode)
   
@@ -584,10 +575,11 @@
     ("g" golden-ratio-mode)
     ("o" org-modern-mode)
     ("p" spacious-padding-mode)
+    ("V" vertico-multiform-mode)
   
     ("m" menu-bar-mode)
     ("t" treemacs)
-    ("T" u--toggle-tab-bar-headers-visible)
+    ("T" cfg/toggle-tab-bar-headers-visible)
     ("W" tab-line-mode)
   
     ("U" user-trmap-mode)

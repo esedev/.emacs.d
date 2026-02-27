@@ -20,11 +20,6 @@ cp scripts/emacs-runner.sh /usr/local/bin/emax
 echo ". \$HOME/.config/emacs/scripts/emacs-env" >> ~/.bashrc
   #+end_src
 
-
-* Install packages
-+ emacs setup-roles.el
-+ =<M-x>= eval-buffer
-
 * Upgrade all packages
 + =<M-x>= package-list-packages
 + =<M-x>= package-refresh-contents

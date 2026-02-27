@@ -1,6 +1,6 @@
 (dolist (prf '(actual built-in craft devel))
-  (let ((fname (cfg/path (format "profiles/profile-%S.el" prf))))
-    ;; (send-string-to-terminal (format "compile prifiel %s" prf))
+  (let ((fname (cfg/path (format "init/init-%S.el" prf))))
+    ;; (send-string-to-terminal (format "compile profile %s" prf))
     (message "Compile: %s" fname)
     (when (file-exists-p fname)
       (byte-compile-file fname))

@@ -163,16 +163,13 @@
   :ensure nil
   :pin manual
   :defer t
-  :hook  (org-mode . u-hook--org-mode-setup)
+  :hook  (org-mode . cfg//hook--org-mode)
   :init
-  (defun u-hook--org-mode-setup ()
+  (defun cfg//hook--org-mode ()
     "Minor modes tunning."
     (org-indent-mode 1)
     (variable-pitch-mode 0)
     (visual-line-mode 1))
-  (defun cfg/org (arg)
-    "Return path to ARG file."
-    (expand-file-name arg (cfg/shelf "org-arium")))
   (keymap-set cfg/kmap-open-entities "a" '("agenda" . org-agenda))
   (keymap-set cfg/kmap-open-entities "s" '("schedule" . org-agenda-list))
   :bind-keymap

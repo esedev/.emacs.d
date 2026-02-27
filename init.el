@@ -212,7 +212,7 @@
      '(auto-revert-interval 1)
      '(delete-selection-mode t)
      ;; '(global-auto-revert-mode t) ; autoreload file from disk if changed
-     ;; '(global-auto-revert-non-file-buffers t)
+     '(global-auto-revert-non-file-buffers t)
      '(require-final-newline t)
      '(truncate-lines t)
      '(use-short-answers t))
