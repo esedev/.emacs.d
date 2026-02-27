@@ -1,4 +1,4 @@
-;;; profile-craft.el --- Light Emacs config  -*- lexical-binding: t; -*-
+;;; init-craft.el --- Light Emacs config  -*- lexical-binding: t; -*-
 
 ;; WARNING: this script generated form Config.org file.
 ;; Copyright (c) 2024-2026 Sergey Egorov
@@ -32,6 +32,7 @@
 ;;;
 ;;; role--built-in--core
 ;;;
+
 (use-package emacs
   :ensure nil
   :init
@@ -906,5 +907,5 @@
 
 (killless-mode t) ; protect from accidentally closing
 
-(provide 'profile-craft)
-;;; profile-craft.el ends here
+(provide 'init-craft)
+;;; init-craft.el ends here

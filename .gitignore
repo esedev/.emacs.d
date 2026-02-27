@@ -6,8 +6,8 @@
 !data
 !data/**
 
-!profiles
-!profiles/*.el
+!init
+!init/*.el
 
 !scripts
 !scripts/**
@@ -20,4 +20,5 @@
 !save/.gitkeep
 
 !target
-!target/.gitkeep
+!target/emacs-q
+!target/emacs-q/.gitkeep

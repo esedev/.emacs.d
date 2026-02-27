@@ -1,4 +1,4 @@
-;;; profile-actual.el --- Default Emacs init script  -*- lexical-binding: t; -*-
+;;; init-actual.el --- Default Emacs init script  -*- lexical-binding: t; -*-
 
 ;; WARNING: this script generated form Config.org file.
 ;; Copyright (c) 2024-2026 Sergey Egorov
@@ -32,6 +32,7 @@
 ;;;
 ;;; role--built-in--core
 ;;;
+
 (use-package emacs
   :ensure nil
   :init
@@ -912,7 +913,7 @@
   (with-eval-after-load 'eglot
     (add-to-list 'eglot-server-programs
                  '(d-mode . ("serve-d")))))
-(cfg//remap-major-modes)
+(cfg//setup--remap-major-modes)
 
-(provide 'profile-actual)
-;;; profile-actual.el ends here
+(provide 'init-actual)
+;;; init-actual.el ends here

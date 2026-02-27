@@ -7,3 +7,5 @@ alias emaxd='env EMAX_PRF=devel emax'
 alias tmaxb='emaxb -nw'
 alias tmaxc='emaxc -nw'
 alias tmaxd='emaxd -nw'
+
+alias emacs-q='emacs -q --init-dir="~/.config/emacs/target/emacs-q"'

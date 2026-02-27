@@ -1,4 +1,4 @@
-;;; profile-devel.el --- Experimental Emacs config  -*- lexical-binding: t; -*-
+;;; init-devel.el --- Experimental Emacs config  -*- lexical-binding: t; -*-
 
 ;; WARNING: this script generated form Config.org file.
 ;; Copyright (c) 2024-2026 Sergey Egorov
@@ -29,10 +29,10 @@
 ;; This config used for experiments with emacs configuration
 
 ;;; Code:
-;; 
 ;;;
 ;;; role--built-in--core
 ;;;
+
 (use-package emacs
   :ensure nil
   :init
@@ -705,5 +705,5 @@
 ;;   :config
 ;;   (which-key-add-key-based-replacements "C-c C-c" "Rustic"))
 
-(provide 'profile-devel)
-;;; profile-devel.el ends here
+(provide 'init-devel)
+;;; init-devel.el ends here

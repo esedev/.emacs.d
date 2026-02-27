@@ -1,4 +1,4 @@
-;;; profile-built-in.el --- Minimalistic Emacs config  -*- lexical-binding: t; -*-
+;;; init-built-in.el --- Minimalistic Emacs config  -*- lexical-binding: t; -*-
 
 ;; WARNING: this script generated form Config.org file.
 ;; Copyright (c) 2024-2026 Sergey Egorov
@@ -32,6 +32,7 @@
 ;;;
 ;;; role--built-in--core
 ;;;
+
 (use-package emacs
   :ensure nil
   :init
@@ -279,17 +280,6 @@
                     [92 9])))
   ;; delete trailing whitespaces when save buffer
   (add-to-list 'write-file-functions 'delete-trailing-whitespace))
-(defun cfg//ido-mode-setup ()
-  (ido-mode 1)
-  (setf (nth 2 ido-decorations) "\n")
-  (setq ido-enable-flex-matching t) ; show any name that has the chars you typed
-  (setq ido-default-file-method 'selected-window) ; use current pane for newly opened file
-  (setq ido-default-buffer-method 'selected-window) ; use current pane for newly switched buffer
-  (setq max-mini-window-height 0.5) ; big minibuffer height, for ido to show choices vertically
-  )
-(defun cfg//remap-major-modes ()
-  (push '(ruby-mode ruby-ts-mode) major-mode-remap-alist)
-  (push '(rust-mode rust-ts-mode) major-mode-remap-alist))
 (use-package flymake
   :ensure nil
   :custom
@@ -323,9 +313,9 @@
   :mode "\\.rs\\'"
   :hook
   (rust-ts-mode . eglot-ensure))
-(cfg//remap-major-modes)
+(cfg//setup--remap-major-modes)
 
-(cfg//ido-mode-setup)
+(cfg//setup--ido-mode)
 
-(provide 'profile-built-in)
-;;; profile-built-in.el ends here
+(provide 'init-built-in)
+;;; init-built-in.el ends here

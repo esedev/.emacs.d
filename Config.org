@@ -3,14 +3,15 @@
 #+startup: overview
 
 * =--Emacs-files---------------------------=
-* file--early-init-el
+* early-init.el
+#+name: early-init.el
 #+begin_src emacs-lisp :noweb yes :tangle early-init.el
 ;;; early-init.el --- Emacs init script  -*- lexical-binding: t; -*-
 ;;; Commentary:
+;;; <<data--early-init-comment>>
 
 ;;; Code:
-
-;;; debug
+;;;;; debug
 (when init-file-debug
   (trace-function 'require)
   (trace-function 'load)
@@ -20,7 +21,7 @@
   ;; (edebug-trace "CFG: start early-init.el")
   )
 
-;;; processing extended command line arguments with '--u-' prefix
+;;;;; processing extended command line arguments with '--u-' prefix
 (when t
   (require 'cl-seq)
   (let ((u-args (cl-remove-if-not
@@ -34,77 +35,60 @@
         (setenv var val)))
     (cl-delete-if (lambda (e) (string-prefix-p "--u-" e)) command-line-args)))
 
-;;; initialize config variables
+;;;;; initialize config variables
 (defvar cfg/profile (intern (or (getenv "EMAX_PRF") "actual"))
   "User Emacs profile identity.")
 (defvar cfg/job (getenv "EMAX_JOB") "Job identity, type string.")
-(defvar cfg/title (format "%s%s☀%s" cfg/profile
-                          (if cfg/job (concat "-" cfg/job) "")
-                          system-name) "Frame title of Emacs.")
-(defvar cfg/title-tail "" "Additional title info, type string.")
+(defvar cfg/directory user-emacs-directory "Path to config directory.")
 
-(defun cfg/path (arg)
+;;;;; paths for clean and order
+(defun cfg/path (arg)                   ; ~/.config/emacs/$arg
+  "Return full path file ARG in `cfg/directory'."
+  (expand-file-name arg cfg/directory))
+(defun cfg/path-s (arg)                 ; ~/.config/emacs/save/$arg
+  (cfg/path (concat "save/" arg)))
+
+(setq user-emacs-directory (cfg/path "target"))
+
+(defun cfg/path-u (arg)                 ; ~/.config/emacs/target/$arg
   "Return full path file ARG in `user-emacs-directory'."
   (expand-file-name arg user-emacs-directory))
-(defun cfg/path-s (arg)
-  (expand-file-name (format "save/%s" arg) user-emacs-directory))
-(defun cfg/path-t (arg)
-  (expand-file-name (format "target/%s/%s" cfg/profile arg) user-emacs-directory))
-(defun cfg/path-u (arg)
-  (expand-file-name (format "target/%s" arg) user-emacs-directory))
-;;; micro tuning of Emacs
-;; (setq frame-title-format '( "GNU/Emacs " cfg/title))
-(setq frame-title-format
-      '("GNU/Emacs"
-        (:eval (if tab-bar-mode
-                (concat " ___/ " (cdr (assq 'name (tab-bar--current-tab))) " \\___ ") ""))
-         "<"cfg/title ">" cfg/title-tail))
-;;;;; environment
-(setq package-user-dir (cfg/path-t "elpa"))
+(defun cfg/path-p (arg)                 ; ~/.config/emacs/target/prf--%name%/$arg
+  "Return full profile path file ARG in `user-emacs-directory'."
+  (cfg/path-u (format "prf--%s/%s" cfg/profile arg)))
+
+(setq package-user-dir (cfg/path-p "elpa"))
 (when (boundp 'native-comp-eln-load-path) ; set eln-cache dir
-  (startup-redirect-eln-cache (cfg/path-t "eln-cache")))
+  (startup-redirect-eln-cache (cfg/path-p "eln-cache")))
+
+(setq custom-file (cfg/path-s (format "custom-file-%s.el" cfg/profile)))
+
+;;;;; micro tuning
+(let ((title (format "%s%s☀%s" cfg/profile
+                          (if cfg/job (concat "-" cfg/job) "")
+                          system-name)))
+  ;; (setq frame-title-format '( "GNU/Emacs " title))
+  (setq frame-title-format
+        '("GNU/Emacs"
+          (:eval (if tab-bar-mode
+                     (concat " ___/ " (cdr (assq 'name (tab-bar--current-tab))) " \\___ ") ""))
+          "<" title ">"))
+  )
+
 ;;;;; performance
-(setq gc-cons-threshold (* 50 1024 1024)
-      gc-cons-percentage 0.6)
-;;;;; using a custom file
-(setq custom-file (cfg/path-s (format "emacs-custom--%s.el" cfg/profile)))
-(when (file-exists-p custom-file) (load custom-file))
+(setq gc-cons-threshold (* 64 1024 1024)) ; run gc after threshold
+(setq read-process-output-max (* 1 1024 1024)) ; performance with language servers
+(setenv "LSP_USE_PLISTS" "true") ; tree-sitter performance enhancement
+(setq lsp-use-plists t)          ;
 
-;;;;; override custom
-(custom-set-variables
- '(auto-save-default nil)
- '(auto-save-list-file-prefix (cfg/path-u "tmp-auto-save-list/.saves-"))
- '(create-lockfiles nil)
- '(make-backup-files nil)
- '(project-list-file (cfg/path-u "projects"))
- '(recentf-mode t) ; use the M-x recentf-open-files command
- '(recentf-save-file (cfg/path-u "recentf"))
- '(savehist-mode t)
- '(savehist-file (cfg/path-u "history"))
- '(use-short-answers t))
+;;;;;
+(setq package-enable-at-startup nil)    ; must be called explicitly (package-initialize)
 
-(custom-set-variables
- '(blink-cursor-blinks 3600)
- '(column-number-mode t)
- '(display-line-numbers t)
- '(global-display-line-numbers-mode t)
- '(fringe-mode 8 nil (fringe))
- '(inhibit-startup-screen t)
- '(menu-bar-mode nil)
- '(scroll-bar-mode nil)
- '(scroll-step 1)
- '(tab-bar-mode t)   ; using tab bars
- '(tab-bar-show 100) ; hide if tabs less 100
- '(tool-bar-mode nil)
- '(global-hl-line-mode t) ;;; Подсветка текущей строки
- '(visible-bell t)) ; no blink please
-
-(setq package-enable-at-startup nil)    ; must have
 
 (provide 'early-init)
 ;;; early-init.el ends here
 #+end_src
-* file--init-el
+* init.el
 #+begin_src emacs-lisp :noweb yes :tangle init.el
 ;;; init.el --- Emacs init script  -*- lexical-binding: t; -*-
 
@@ -137,22 +121,27 @@
   (use-package-minimum-reported-time 0.05)
   (use-package-verbose nil))
 ;;;;; end of configure package manager
+;;; performance
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (let ((mb (if (display-graphic-p) 8 1)))
+              (setq gc-cons-threshold (* mb 1024 1024)))
+            (message "Emacs loaded in %s seconds with %d garbage collections."
+                     (emacs-init-time "%.2f") gcs-done))
+          100)
 
-<<role--built-in--init>>
-<<thms--initialize>>
 
+<<lisp--init>>
 ;;; load profile
-(load (cfg/path (format "profiles/profile-%s" cfg/profile)))
-
-(load (cfg/path "data/help-quick-custom"))
+(load (cfg/path (format "init/init-%s" cfg/profile)))
 
 (provide 'init)
 ;;; init.el ends here
 #+end_src
 * =--Profiles------------------------------=
-* profile--actual
-#+begin_src emacs-lisp :noweb yes :tangle profiles/profile-actual.el
-;;; profile-actual.el --- Default Emacs init script  -*- lexical-binding: t; -*-
+* init/init-actual.el
+#+begin_src emacs-lisp :noweb yes :tangle init/init-actual.el
+;;; init-actual.el --- Default Emacs init script  -*- lexical-binding: t; -*-
 <<data--copyright>>
 <<data--license-gpl-v3>>
 ;;; Commentary:
@@ -164,12 +153,12 @@
 <<role--emacs>>
 <<role--ide-native>>
 
-(provide 'profile-actual)
-;;; profile-actual.el ends here
+(provide 'init-actual)
+;;; init-actual.el ends here
 #+end_src
-* profile--built-in
-#+begin_src emacs-lisp :noweb yes :tangle profiles/profile-built-in.el
-;;; profile-built-in.el --- Minimalistic Emacs config  -*- lexical-binding: t; -*-
+* init/init-built-in.el
+#+begin_src emacs-lisp :noweb yes :tangle init/init-built-in.el
+;;; init-built-in.el --- Minimalistic Emacs config  -*- lexical-binding: t; -*-
 <<data--copyright>>
 <<data--license-gpl-v3>>
 ;;; Commentary:
@@ -177,17 +166,16 @@
 
 ;;; Code:
 <<role--built-in--core>>
-<<code--emacs-built-in>>
 <<role--built-in--ide>>
 
-(cfg//ido-mode-setup)
+(cfg//setup--ido-mode)
 
-(provide 'profile-built-in)
-;;; profile-built-in.el ends here
+(provide 'init-built-in)
+;;; init-built-in.el ends here
 #+end_src
-* profile--craft
-#+begin_src emacs-lisp :noweb yes :tangle profiles/profile-craft.el
-;;; profile-craft.el --- Light Emacs config  -*- lexical-binding: t; -*-
+* init/init-craft.el
+#+begin_src emacs-lisp :noweb yes :tangle init/init-craft.el
+;;; init-craft.el --- Light Emacs config  -*- lexical-binding: t; -*-
 <<data--copyright>>
 <<data--license-gpl-v3>>
 ;;; Commentary:
@@ -201,19 +189,18 @@
 
 (killless-mode t) ; protect from accidentally closing
 
-(provide 'profile-craft)
-;;; profile-craft.el ends here
+(provide 'init-craft)
+;;; init-craft.el ends here
 #+end_src
-* profile--devel
-#+begin_src emacs-lisp :noweb yes :tangle profiles/profile-devel.el
-;;; profile-devel.el --- Experimental Emacs config  -*- lexical-binding: t; -*-
+* init/init-devel.el
+#+begin_src emacs-lisp :noweb yes :tangle init/init-devel.el
+;;; init-devel.el --- Experimental Emacs config  -*- lexical-binding: t; -*-
 <<data--copyright>>
 <<data--license-gpl-v3>>
 ;;; Commentary:
 ;; This config used for experiments with emacs configuration
 
 ;;; Code:
-;; <<package-manager--no-packages>>
 <<role--built-in--core>>
 <<role--navi--vertico>>
 <<pckg--hydra>>
@@ -222,56 +209,117 @@
 ;; <<role--experimental>>
 ;; <<role--yard-of-test>>
 
-(provide 'profile-devel)
-;;; profile-devel.el ends here
+(provide 'init-devel)
+;;; init-devel.el ends here
 #+end_src
-* =--Roles---------------------------------=
-* role--built-in--init
-#+name: role--built-in--init
-#+begin_src emacs-lisp :noweb yes
-;;;
-;;; role--built-in--init
-;;;
-(use-package emacs
-  :init
-  (defun cfg/yard (&optional arg) (expand-file-name (or arg "") "~/sync/yard"))
-  (defun cfg/shelf (&optional arg) (expand-file-name (or arg "") "~/sync/shelf"))
-  (defun cfg/display-startup-time ()
-    (message "Emacs loaded in %s seconds with %d garbage collections."
-             (emacs-init-time "%.2f") gcs-done))
+* =--Lisp----------------------------------=
+* lisp--init
+#+name: lisp--init
+#+begin_src emacs-lisp :noweb yes :results silent
+<<lisp--cfg-setup>>
+(cfg//setup--override-keybindings)
 
+<<mode--killless-mode>>
+<<mode--user-trmap-mode>>
+(user-trmap-mode 1)
+
+<<thms--initialize>>
+;;; customize
+<<cstm--user-env>>
+(if (file-exists-p custom-file)
+    (load custom-file)
+  (progn
+    <<cstm--default>>
+    <<cstm--electric-pairs>>
+    ))
+<<lisp--emacs-customize>>
+<<lisp--additional-functions>>
+;;;
+(load (cfg/path "data/help-quick-custom"))
+#+end_src
+* lisp--cfg-setup
+#+name: lisp--cfg-setup
+#+begin_src emacs-lisp :noweb yes :results silent
+;;;
+;;; lisp--cfg-setup
+;;;
+(defun cfg//setup--override-keybindings ()
   <<bind--override-standard>>
-  (cfg/bind--override-standard)
-
-  <<code--emacs-user-functions>>
-  <<mode--killless-mode>>
-  <<mode--user-trmap-mode>>
-
-  <<cstm--emacs-hards>>
-
-  (user-trmap-mode 1)
-  :hook ((prog-mode . hs-minor-mode)     ; folding code
-         (emacs-startup . cfg/display-startup-time))
-  :config
-  (setq major-mode-remap-alist
-        '((bash-mode . bash-ts-mode)
-          (css-mode . css-ts-mode)
-          (js2-mode . js-ts-mode)
-          (json-mode . json-ts-mode)
-          (typescript-mode . typescript-ts-mode)
-          (python-mode . python-ts-mode)
-          (yaml-mode . yaml-ts-mode)))
-
-  (when (display-graphic-p (selected-frame))
-    (setopt cursor-type 'hollow))
   )
+(defun cfg//setup--ido-mode ()
+  (ido-mode 1)
+  (setf (nth 2 ido-decorations) "\n")
+  (setq ido-enable-flex-matching t) ; show any name that has the chars you typed
+  (setq ido-default-file-method 'selected-window) ; use current pane for newly opened file
+  (setq ido-default-buffer-method 'selected-window) ; use current pane for newly switched buffer
+  (setq max-mini-window-height 0.5) ; big minibuffer height, for ido to show choices vertically
+  )
+(defun cfg//setup--remap-major-modes ()
+  (push '(ruby-mode ruby-ts-mode) major-mode-remap-alist)
+  (push '(rust-mode rust-ts-mode) major-mode-remap-alist))
 #+end_src
+* lisp--emacs-customize
+#+name: lisp--emacs-customize
+#+begin_src emacs-lisp :results silent
+;;;
+;;; lisp--emacs-customize
+;;;
+(when (display-graphic-p (selected-frame))
+  (setopt cursor-type 'hollow))
+;;; remap tree-sitter modes
+(setq major-mode-remap-alist
+      '((bash-mode . bash-ts-mode)
+        (css-mode . css-ts-mode)
+        (js2-mode . js-ts-mode)
+        (json-mode . json-ts-mode)
+        (typescript-mode . typescript-ts-mode)
+        (python-mode . python-ts-mode)
+        (yaml-mode . yaml-ts-mode)))
+;;;;; hightlight line off
+(dolist (m-hook '(eshell-mode-hook
+                  term-mode-hook
+                  shell-mode-hook))
+  (add-hook m-hook (lambda () (hl-line-mode 0))))
+;;;;; display-line-numbers off
+(dolist (m-hook '(eshell-mode-hook
+                  eww-mode-hook
+                  org-mode-hook
+                  minimap-sb-mode-hook
+                  term-mode-hook
+                  shell-mode-hook
+                  treemacs-mode-hook
+                  spacious-padding-mode-hook
+                  w3m-mode-hook))
+  (add-hook m-hook (lambda () (display-line-numbers-mode 0))))
+;;;;; folding code
+(add-hook 'prog-mode-hook #'hs-minor-mode)
+#+end_src
+* lisp--additional-functions
+#+name: lisp--additional-functions
+#+begin_src emacs-lisp :results silent
+;;;
+;;; lisp--additional-functions
+;;;
+(defun cfg/toggle-tab-bar-headers-visible (&optional visible)
+  "Show/hide headers of tab bar.
+   If argument VISIBLE is nil, then toggle visible of headers.
+   If argument VISIBLE <= 0, then hide headers.
+   If argument VISIBLE > 0, then show headers."
+  (interactive)
+  (let ((tbs (if visible (if ; <
+                             (> visible 0) t 100)
+               (if (eq tab-bar-show t) 100 t))))
+    (customize-set-variable 'tab-bar-show tbs))
+  (eq tab-bar-show t))
+  #+end_src
+* =--Roles---------------------------------=
 * role--built-in--core
 #+name: role--built-in--core
 #+begin_src emacs-lisp :noweb yes
 ;;;
 ;;; role--built-in--core
 ;;;
+<<code--emacs-built-in>>
 <<pckg--emacs>>
 <<pckg--dired>>
 <<pckg--eww>>
@@ -287,7 +335,7 @@
 <<pckg--flymake>>
 <<pckg--eglot>>
 <<pckg--rust-ts-mode>>
-(cfg//remap-major-modes)
+(cfg//setup--remap-major-modes)
 #+end_src
 * =------=
 * role--navi--vertico
@@ -340,7 +388,7 @@
 <<pckg--eglot>>
 <<pckg--rust-ts-mode>>
 <<pckg--d-mode>>
-(cfg//remap-major-modes)
+(cfg//setup--remap-major-modes)
 #+end_src
 * role--ide-lsp
 #+name: role--ide-lsp
@@ -1408,33 +1456,27 @@
 * bind--override-standard
 #+name: bind--override-standard
 #+begin_src emacs-lisp :results silent
-;;;
-;;; bind--override-standard
-;;;
-(defun cfg/bind--override-standard ()
-  "Rebind standard bindings"
-  (keymap-global-unset "C-x C-c")       ; save-buffers-kill-terminal
-  (keymap-global-set "C-x x c" 'save-buffers-kill-terminal) ; close emacs
-  ;; (keymap-global-set "C-x C-c" (lambda () (interactive) (message "<C-x C-c> rebind to <C-x x c>")))
-  (keymap-global-set "C-x C-c" 'kmacro-keymap) ; release <C-x C-k>
-  (keymap-global-set "C-x C-k" 'kill-current-buffer) ;
+(keymap-global-unset "C-x C-c")       ; save-buffers-kill-terminal
+(keymap-global-set "C-x x c" 'save-buffers-kill-terminal) ; close emacs
+;; (keymap-global-set "C-x C-c" (lambda () (interactive) (message "<C-x C-c> rebind to <C-x x c>")))
+(keymap-global-set "C-x C-c" 'kmacro-keymap) ; release <C-x C-k>
+(keymap-global-set "C-x C-k" 'kill-current-buffer) ;
 ;;; <C-;> && <C-'> && <C-,> don't working in terminal
 ;;; <C-/> readed like <C-_>
-  (keymap-global-unset "C-z")         ; suspend-frame + <C-x C-z>
-  (keymap-global-unset "C-?")         ; undo-redo == <C-S-z> + <C-M-_>
-  (keymap-global-unset "C-/")         ; undo == <C-z> + <C-_>
-  (keymap-global-unset "M-/")         ; dabbrev-expand
-  (keymap-global-unset "C-x ;")       ; comment-set-column
-  (keymap-global-unset "C-x C-;")     ; comment-line == <C-/>
-  (keymap-global-unset "M-;")         ; comment-dwim == <M-/>
-  (keymap-global-set "C-z" 'undo)     ;
-  (keymap-global-set "C-S-z" 'undo-redo)  ; also <C-M-_> (in terminal)
-  (keymap-global-set "C-/" 'comment-line) ; short comment line
-  (keymap-global-set "M-/" 'comment-dwim) ; comment endline
-  (keymap-global-set "M-;" 'dabbrev-expand) ; expand previous word "dynamically"
+(keymap-global-unset "C-z")         ; suspend-frame + <C-x C-z>
+(keymap-global-unset "C-?")         ; undo-redo == <C-S-z> + <C-M-_>
+(keymap-global-unset "C-/")         ; undo == <C-z> + <C-_>
+(keymap-global-unset "M-/")         ; dabbrev-expand
+(keymap-global-unset "C-x ;")       ; comment-set-column
+(keymap-global-unset "C-x C-;")     ; comment-line == <C-/>
+(keymap-global-unset "M-;")         ; comment-dwim == <M-/>
+(keymap-global-set "C-z" 'undo)     ;
+(keymap-global-set "C-S-z" 'undo-redo)  ; also <C-M-_> (in terminal)
+(keymap-global-set "C-/" 'comment-line) ; short comment line
+(keymap-global-set "M-/" 'comment-dwim) ; comment endline
+(keymap-global-set "M-;" 'dabbrev-expand) ; expand previous word "dynamically"
 
-  (keymap-global-set "C-x !" 'shrink-window)
-  )
+(keymap-global-set "C-x !" 'shrink-window)
 #+end_src
 * bind--interactive-user-hotkeys
 /The keys are bind when the *emacs* package included/ [[*pckg--emacs]]
@@ -1643,54 +1685,75 @@
   ("SPC" nil "finished", :exit t))
 #+end_src
 * =--Emacs-customization-------------------=
-* cstm--emacs-hards
-#+name: cstm--emacs-hards
-#+begin_src emacs-lisp :noweb yes
-;;;
-;;; cstm--emacs-hards
-;;;
+* cstm--user-env
+#+name: cstm--user-env
+#+begin_src emacs-lisp :results silent
+(defun cfg/yard (&optional arg) (expand-file-name (or arg "") "~/sync/yard"))
+(defun cfg/shelf (&optional arg) (expand-file-name (or arg "") "~/sync/shelf"))
+(defun cfg/org (&optional arg) (expand-file-name (or arg "") "~/sync/shelf/org-arium"))
 (custom-set-variables
- '(c-tab-always-indent t)
- '(indent-tabs-mode nil)
- '(tab-always-indent t)
- '(tab-width 4)
- '(delete-selection-mode t)
- '(global-auto-revert-mode t) ; autoreload file from disk if changed
- '(global-auto-revert-non-file-buffers t)
- '(auto-revert-interval 1)
- '(history-length 25) ; save what you enter into minibuffer prompts
- '(history-delete-duplicates t)
- '(require-final-newline t)
- '(save-place-mode t) ; remember and restore the last cursor location of opened files
- '(truncate-lines t)
  '(calendar-date-style 'european)
- '(diary-file (cfg/shelf "diary"))
+ '(diary-file (cfg/shelf "diary")))
+#+end_src
+* cstm--default
+#+name: cstm--default
+#+begin_src emacs-lisp :results silent
+;;;;; visibility
+(custom-set-variables
+ '(blink-cursor-blinks 3600)   ; время мигания курсора при бездействии
+ '(column-number-mode t)
+ '(display-line-numbers t)
+ '(fringe-mode 8 nil (fringe))
+ '(hl-line-mode t)                 ; подсветка текущей строки
+ '(inhibit-startup-screen t)
+ '(menu-bar-mode nil)
+ '(scroll-bar-mode nil)
+ '(scroll-step 1)
+ '(tab-bar-mode t)                      ; using tab bars
+ '(tab-bar-show 100)                    ; hide if tabs less 100
+ '(tool-bar-mode nil)
+ '(visible-bell t))                ; мигание если действие не доступно
+;;;;; saving additional information
+(custom-set-variables
+ '(auto-save-default nil)
+ '(auto-save-list-file-prefix (cfg/path-u "tmp-auto-save-list/.saves-"))
+ '(create-lockfiles nil)
+ '(make-backup-files nil)
+ ;; '(project-list-file (cfg/path-u "projects"))
+ '(recentf-mode t) ; use the M-x recentf-open-files command
+ ;; '(recentf-save-file (cfg/path-u "recentf"))
+ '(savehist-mode t)      ; history
+ '(history-length 25)    ; save what you enter into minibuffer prompts
+ '(history-delete-duplicates t)
+ ;; '(savehist-file (cfg/path-u "history"))
+ '(save-place-mode t) ; remember and restore the last cursor location of opened files
  )
+;;;;; behaviour
+(custom-set-variables
+ '(auto-revert-mode t)                  ; режим автообновления буфера
+ '(auto-revert-interval 1)
+ '(delete-selection-mode t)
+ ;; '(global-auto-revert-mode t) ; autoreload file from disk if changed
+ ;; '(global-auto-revert-non-file-buffers t)
+ '(require-final-newline t)
+ '(truncate-lines t)
+ '(use-short-answers t))
+;;;;; tabs
+(custom-set-variables
+ '(indent-tabs-mode nil)
+ '(c-tab-always-indent t)
+ '(tab-always-indent t)
+ '(tab-width 4))
 ;;;;; C/C++ mode
 (c-add-style "main" '("gnu" (c-basic-offset . 4)))
-(customize-set-variable 'c-default-style '((java-mode . "java") (awk-mode . "awk") (other . "main")))
-;;;;; hightlight line off
-(dolist (mode '(eshell-mode-hook
-                  term-mode-hook
-                  shell-mode-hook))
-    (add-hook mode (lambda () (hl-line-mode 0))))
-;;;;; display-line-numbers off
-(dolist (mode '(eshell-mode-hook
-                eww-mode-hook
-                org-mode-hook
-                minimap-sb-mode-hook
-                term-mode-hook
-                shell-mode-hook
-                treemacs-mode-hook
-                spacious-padding-mode-hook))
-  (add-hook mode (lambda () (display-line-numbers-mode 0))))
-
-<<cstm--electric-pairs>>
+(customize-set-variable 'c-default-style
+                        '((java-mode . "java") (awk-mode . "awk")
+                          (other . "main")))
 #+end_src
 * cstm--electric-pairs
 #+name: cstm--electric-pairs
 #+begin_src emacs-lisp
-;;; electric-pairs
+;;;;; electric-pairs
 (custom-set-variables
  '(electric-pair-mode t)
  '(electric-pair-pairs
@@ -1754,21 +1817,6 @@
                                    'None)) t)
 #+end_src
 * =----------------------------------------=
-* code--emacs-built-in
-#+name: code--emacs-built-in
-#+begin_src emacs-lisp :results silent
-(defun cfg//ido-mode-setup ()
-  (ido-mode 1)
-  (setf (nth 2 ido-decorations) "\n")
-  (setq ido-enable-flex-matching t) ; show any name that has the chars you typed
-  (setq ido-default-file-method 'selected-window) ; use current pane for newly opened file
-  (setq ido-default-buffer-method 'selected-window) ; use current pane for newly switched buffer
-  (setq max-mini-window-height 0.5) ; big minibuffer height, for ido to show choices vertically
-  )
-(defun cfg//remap-major-modes ()
-  (push '(ruby-mode ruby-ts-mode) major-mode-remap-alist)
-  (push '(rust-mode rust-ts-mode) major-mode-remap-alist))
-#+end_src
 * code--emacs-improvies
 #+name: code--emacs-improvies
 #+begin_src emacs-lisp
@@ -1794,25 +1842,6 @@
 (defmacro i-event (func arg)
   "Returns an anonymous function that calls the FUNC with an argument ARG."
   `(lambda () (interactive) (,func ,arg)))
-#+end_src
-* code--emacs-user-functions
-#+name: code--emacs-user-functions
-#+begin_src emacs-lisp
-;;;
-;;; code--emacs-user-functions
-;;;
-;; toggle tab-bar headers visible
-(defun cfg/toggle-tab-bar-headers-visible (&optional visible)
-  "Show/hide headers of tab bar.
-   If argument VISIBLE is nil, then toggle visible of headers.
-   If argument VISIBLE <= 0, then hide headers.
-   If argument VISIBLE > 0, then show headers."
-  (interactive)
-  (let ((tbs (if visible (if ; <
-                             (> visible 0) t 100)
-               (if (eq tab-bar-show t) 100 t))))
-    (customize-set-variable 'tab-bar-show tbs))
-  (eq tab-bar-show t))
 #+end_src
 * code--jobs
 #+name: code--jobs
@@ -2002,5 +2031,32 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#+end_src
+* data--early-init-comment
+#+name: data--early-init-comment
+#+begin_src plain :results silent
+This file performs initial configuration initialization.
+It's a good place to set up debugging options.
+
+1. Additional command line arguments starting with the
+  --u-%name% prefix are processed. The values of these options
+  ​​will be written to environment variables named EMAX_%NAME%.
+  The current configuration uses the following environment variables:
+  EMAX_PRF - Determines which initialization file will be loaded
+  EMAX_THM - Overrides the Emacs color theme
+  EMAX_JOB - A job script to run when Emacs starts
+  example:  emacs --u-prf=devel --u-thm=wombat
+            equivalent to the startup command
+            env EMAX_PRF=devel EMAX_THM=wombat emacs
+
+2. Global variables that have values ​​for configuration settings are initialized
+  cfg/profile - specifies which startup script will be used.
+  Possible values: actual(default), built-in, craft, devel.
+
+3. Setting up paths, keep the configuration directory clean and tidy.
+  Functions that return paths to configuration files are defined
+  to ensure the configuration directory is kept in order.
+
+4. Tuning of performance
 #+end_src
 * =----------------------------------------=
