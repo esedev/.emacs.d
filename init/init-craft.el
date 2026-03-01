@@ -1,4 +1,4 @@
-;;; init-craft.el --- Light Emacs config  -*- lexical-binding: t; -*-
+;;; init-craft.el --- Emacs config like IDE  -*- lexical-binding: t; -*-
 
 ;; WARNING: this script generated form Config.org file.
 ;; Copyright (c) 2024-2026 Sergey Egorov
@@ -35,69 +35,15 @@
 
 (use-package emacs
   :ensure nil
-  :init
-  (defvar-keymap cfg/kmap-open-config :full t
-    :doc "Config"
-    "1" '("Config" . (lambda () (interactive) (find-file (cfg/path "Config.org"))))
-    ;; "1" '("Config" . (i-event (find-file (cfg/path "Config.org"))))
-    "2" '("Cfg directory" . (lambda () (interactive) (project-switch-project (cfg/path ""))))
-    "3" '("Emacs early-init.el" . (lambda () (interactive) (find-file early-init-file)))
-    "4" '("Emacs init.el" . (lambda () (interactive) (find-file user-init-file)))
-    "5" '("Emacs custom-file" . (lambda () (interactive)
-                                  (if (file-exists-p custom-file)
-                                     (find-file custom-file)
-                                    (message (format "file '%s' does not exist" custom-file)))))
-    "6" '("Emacs user dir" . (lambda () (interactive) (find-file user-emacs-directory)))
-    "Y" '("Yard directory" . (lambda () (interactive) (find-file (cfg/yard))))
-    "y" '("Yard config" . (lambda () (interactive) (find-file (cfg/yard "yard.org"))))
-    )
-  (defvar-keymap cfg/kmap-open-entities
-    :doc "Open frequently used entities."
-    "r" '("open recents" . recentf-open)
-    )
-  (defvar-keymap cfg/kmap-run-commands
-    :doc "Run external commands."
-    "a" `("emaxa" . (lambda () (interactive) (make-process :name "Emacs Air" :command "emaxa")))
-    )
-  (defvar-keymap cfg/kmap-user-shelf
-    :doc "Open user shelf."
-    "I" `("roam index" . (lambda ()(interactive) (find-file (cfg/org "index.org"))))
-    "M" `("math" . (lambda ()(interactive) (find-file (cfg/org "math.org"))))
-    "<f12>" `("Заметки" . (lambda ()(interactive) (find-file (cfg/path-s "help-daily.org")))))
-  (defvar-keymap cfg/kmap-update-ui
-    :doc "View changes."
-    "T" '("load theme" . cfg/load-theme)
-    "t" '("switch theme" . cfg/switch-theme))
-  ;; Craft IDE menu
-  (defvar-keymap cfg/kmap-craft-menu
-    :doc "My craft menu on short hand."
-    "?" '("help" . (lambda () (interactive) (find-file (cfg/path-s "jotting.org"))))
-    )
-  ;; Minor user menu
-  (defvar-keymap cfg/kmap-minor-menu
-    :doc "My minor menu on short hand."
-    "s" '("tab switcher" . tab-switcher)
-    "t" '("treemacs" . treemacs)
-    "C-e" '("w-right" . windmove-right)
-    "C-f" '("w-right" . windmove-right)
-    "C-a" '("w-left" . windmove-left)
-    "C-b" '("w-left" . windmove-left)
-    "C-p" '("w-up" . windmove-up)
-    "C-n" '("w-down" . windmove-down))
-  ;; Major user menu
-  (defvar-keymap cfg/kmap-major-menu
-    :doc "My main menu on long hand."
-    "c" `("configure" . ,cfg/kmap-open-config)
-    "o" `("open" . ,cfg/kmap-open-entities)
-    ;; "r" `("run". ,cfg/kmap-run-commands)
-    "u" `("ui" . ,cfg/kmap-update-ui)
-    "k" '("kill less" . killless-mode)
-    "C-c" '("close emacs" .  save-buffers-kill-terminal)
-    "<f12>" `("shelf" . ,cfg/kmap-user-shelf))
-  ;;
-  (keymap-set global-map "C-." cfg/kmap-craft-menu)
-  (keymap-set global-map "C-;" cfg/kmap-minor-menu)
-  (keymap-set global-map "<f12>" cfg/kmap-major-menu)
+  ;; :init
+  ;; (add-to-list 'display-buffer-alist
+  ;;              '("\\*rust-analyzer\\*"
+  ;;                (display-buffer-in-side-window)
+  ;;                (side . right)
+  ;;                (slot . 0)
+  ;;                (window-width . 80)
+  ;;                (window-parameters (no-delete-other-windows . nil))))
+
   )
 
 ;; (use-package desktop
@@ -150,13 +96,13 @@
       (switch-to-buffer buf)))
   :config
   (setq eww-search-prefix "https://lite.duckduckgo.com/lite/?q=")
-  (keymap-set cfg/kmap-user-shelf "<f2>"
+  (keymap-set cfg-hk/open-shelf-map "<f2>"
               '("Руководство по GNU Emacs" .
                 (lambda ()(interactive)(eww "https://alexott.net/ru/emacs/emacs-manual/"))))
-  (keymap-set cfg/kmap-user-shelf "<f3>"
+  (keymap-set cfg-hk/open-shelf-map "<f3>"
               `("Поиск в сети" .
                 (lambda ()(interactive)(eww "https://lite.duckduckgo.com/lite"))))
-  (keymap-set cfg/kmap-user-shelf "<f4>"
+  (keymap-set cfg-hk/open-shelf-map "<f4>"
               '("eww: текущий буфер" .
                 eww-render-buffer)))
 (use-package org
@@ -170,8 +116,8 @@
     (org-indent-mode 1)
     (variable-pitch-mode 0)
     (visual-line-mode 1))
-  (keymap-set cfg/kmap-open-entities "a" '("agenda" . org-agenda))
-  (keymap-set cfg/kmap-open-entities "s" '("schedule" . org-agenda-list))
+  (keymap-set cfg-hk/open-entities-map "a" '("agenda" . org-agenda))
+  (keymap-set cfg-hk/open-entities-map "s" '("schedule" . org-agenda-list))
   :bind-keymap
   ("C-c o" . org-mode-map)
   :custom
@@ -317,8 +263,8 @@
   ;;(add-to-list 'completion-at-point-functions #'cape-tex)
   ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
   ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
-  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
-  ;;(add-to-list 'completion-at-point-functions #'cape-dict)
+  (add-to-list 'completion-at-point-functions #'cape-abbrev)
+  (add-to-list 'completion-at-point-functions #'cape-dict)
   ;;(add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
   ;;(add-to-list 'completion-at-point-functions #'cape-line)
 )
@@ -438,7 +384,7 @@
   ;;;; 5. No project support
   ;; (setq consult-project-function nil)
 )
-(use-package corfu
+(use-package corfu                      ; popup window for autocomplete
   :ensure t
   :pin gnu
   :custom
@@ -467,9 +413,10 @@
   :ensure t
   :pin gnu
   :bind (("C-h B" . embark-bindings)
-         :map cfg/kmap-major-menu
+         :map cfg-hk/major-map
          ("a" . embark-act)
-         :map cfg/kmap-minor-menu
+         :map cfg-hk/agile-map
+         ("a" . embark-act)
          ("M-;" . embark-dwim))
   :init
   ;; Optionally replace the key help with a completing-read interface
@@ -532,6 +479,7 @@
           (consult-grep buffer)
           (minor-mode reverse)
           (imenu buffer)
+          (emax-sh buffer)
           (t unobtrusive)))
   (setq vertico-multiform-commands '((consult-line (:not posframe))
                                      (t posframe)))
@@ -561,7 +509,7 @@
     _q_ quit   _h_ highlight line   _f_ fontaine       _m_ menu
     ^^         _l_ long line wrap   _g_ golden ratio   _t_ treemacs
     ^^         _w_ whitespaces      _o_ org modern     _T_ tab headers
-    _U_ ⌘   ^^                      _p_ paddings       _W_ Win tabs
+    _B_ ⌘   ^^                      _p_ paddings       _W_ Win tabs
     _k_ LLL ^^                      _V_ V. posframe
     "
     ("q" nil)
@@ -582,7 +530,7 @@
     ("T" cfg/toggle-tab-bar-headers-visible)
     ("W" tab-line-mode)
   
-    ("U" user-trmap-mode)
+    ("B" emax-hk-mode)
     ("k" killless-mode))
   
   (defhydra hydra--play-games (:hint nil :color blue)
@@ -624,10 +572,10 @@
     ("f" buf-move-right "right")
     ("SPC" nil "finished", :exit t))
   
-  (keymap-set cfg/kmap-update-ui "C-t" '("text scale" . hydra--text-scale/body))
-  (keymap-set cfg/kmap-update-ui "w" '("window move" . hydra--window-move/body))
-  (keymap-set cfg/kmap-major-menu "g" '("games" . hydra--play-games/body))
-  (keymap-set cfg/kmap-major-menu "t" '("toggle" . hydra--toggle-mode/body))
+  (keymap-set cfg-hk/update-ui-map "C-t" '("text scale" . hydra--text-scale/body))
+  (keymap-set cfg-hk/update-ui-map "w" '("window move" . hydra--window-move/body))
+  (keymap-set cfg-hk/major-map "g" '("games" . hydra--play-games/body))
+  (keymap-set cfg-hk/major-map "t" '("toggle" . hydra--toggle-mode/body))
   
   (keymap-global-set "M-O" 'hydra--window-move/body); window move
 )
@@ -663,10 +611,16 @@
 (use-package golden-ratio ; auto resize window by golden ratio
   :ensure t
   :pin nongnu
+  :delight "GdR"
   ;; :hook (after-init . golden-ratio-mode)
   :custom
   (golden-ratio-exclude-modes '(occur-mode))
   :config
+  (with-eval-after-load "which-key"
+    (add-to-list 'golden-ratio-inhibit-functions
+                 (lambda ()
+                   (and which-key--buffer
+                        (window-live-p (get-buffer-window which-key--buffer))))))
   (keymap-global-set "C-x #" 'golden-ratio))
 (use-package move-text                  ; melpa-stable
   :ensure t                             ; Using the prefix (C-u *number* or META *number*)
@@ -696,7 +650,7 @@
   :pin gnu
   :defer t
   :init
-  (keymap-set cfg/kmap-open-entities "t" '("timers" . tmr-tabulated-view))
+  (keymap-set cfg-hk/open-entities-map "t" '("timers" . tmr-tabulated-view))
   :config
   (setq tmr-sound-file (cfg/path "data/sound/alert.ogg")))
 ;;;;; org
@@ -726,7 +680,7 @@
   :defer t
   :if (display-graphic-p)
   :init
-  (keymap-set cfg/kmap-update-ui "f" '("fontaine" . fontaine-set-preset))
+  (keymap-set cfg-hk/update-ui-map "f" '("fontaine" . fontaine-set-preset))
   :config
   (setq fontaine-presets
         '((regular)
@@ -783,7 +737,7 @@
   :defer t
   :if (display-graphic-p)
   :init
-  (keymap-set cfg/kmap-update-ui "p" '("paddings" . spacious-padding-mode))
+  (keymap-set cfg-hk/update-ui-map "p" '("paddings" . spacious-padding-mode))
   :config
   (setq spacious-padding-subtle-mode-line nil)
   ;; (setq spacious-padding-subtle-mode-line
@@ -820,7 +774,7 @@
     :requires (treemacs all-the-icons)
     :if (display-graphic-p)
     )
-  :bind (:map cfg/kmap-minor-menu
+  :bind (:map cfg-hk/agile-map
               ("t" . treemacs)
               ("C-t" . treemacs-select-window))
   :custom
@@ -868,17 +822,19 @@
   :ensure t
   :hook (after-init . global-flycheck-mode)
   :config
-  (keymap-set cfg/kmap-craft-menu "f" flycheck-command-map)
+  (keymap-set cfg-hk/craft-map "f" flycheck-command-map)
   (which-key-add-key-based-replacements "C-c !" "Flycheck")
   (which-key-add-key-based-replacements "C-. f" "Flycheck"))
 (use-package lsp-mode
   :ensure t
   :init
-  (defun cfg/lsp-mode-setup ()
-      (keymap-set cfg/kmap-craft-menu "m" '("imenu" . lsp-ui-imenu)))
-  :hook (lsp-mode . cfg/lsp-mode-setup)
-  :custom (lsp-keymap-prefix "C-. l")
+  (defun cfg//lsp-mode-setup ()
+    (keymap-set cfg-hk/craft-map "C-." '("doc glance" . lsp-ui-doc-glance))
+    (keymap-set cfg-hk/craft-map "i" '("imenu" . lsp-ui-imenu)))
+  :hook (lsp-mode . cfg//lsp-mode-setup)
+  :custom (lsp-keymap-prefix "C-c l")
   )
+(use-package consult-lsp :ensure t)     ; melpa-stable
 (with-eval-after-load 'lsp-mode
   (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
 (use-package lsp-treemacs
@@ -888,9 +844,14 @@
 (use-package lsp-ui
   :ensure t
   :requires lsp-mode)
+(use-package rust-mode
+  :ensure t
+  :init
+  (setq rust-mode-treesitter-derive t))
 (use-package rustic
   :ensure t
   :delight "R✧stic!"
+  :after rust-mode
   :custom
   (rustic-cargo-use-last-stored-arguments t)
   (rustic-format-on-save t)

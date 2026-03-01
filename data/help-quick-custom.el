@@ -1,4 +1,4 @@
-;;; custom-help-quick.el --- Air Emacs config  -*- lexical-binding: t; -*-
+;;; help-quick-custom.el --- My Emacs config  -*- lexical-binding: t; -*-
 
 ;; Value should be a list of elements, each element should of the form
 ;;   (GROUP-NAME (COMMAND . DESCRIPTION) (COMMAND . DESCRIPTION)...)
@@ -10,7 +10,7 @@
          (shrink-window-horizontally .  "→shrink←")
          (shrink-window-if-larger-than-buffer . "by buff -")
          (balance-windows . "balance +")
-         (golden-ratio . "golden  #")
+         (golden-ratio . "golden  Φ")
          (other-tab-prefix . "other tab")
          (tab-bar-history-back . "tab undo")
          (winner-undo . "win undo"))
@@ -27,6 +27,11 @@
          (project-find-file . "find file") (project-find-regexp . "search")
          (project-query-replace-regexp . "& replace")
          (project-compile . "compile"))
+        ("Emacs API"
+         (consult-imenu . "imenu") (imenu . "imenu")
+         (bookmark-set . "bookmark")
+         (jump-to-register . "bookmark jump")
+         )
         ("Misc." (undo . "undo <C-z>") (undo-redo . "redo <C-S-z>")
          (isearch-forward . "search")
          (isearch-backward . "reverse search")
@@ -43,5 +48,5 @@
          ;; (read-only-mode . "readonly"))
         ))
 
-(provide 'custom-help-quick)
-;;; custom-help-quick.el ends here
+(provide 'help-quick-custom)
+;;; help-quick-custom.el ends here

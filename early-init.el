@@ -1,28 +1,29 @@
 ;;; early-init.el --- Emacs init script  -*- lexical-binding: t; -*-
 ;;; Commentary:
-;;; This file performs initial configuration initialization.
-;;; It's a good place to set up debugging options.
-;;; 
-;;; 1. Additional command line arguments starting with the
-;;;   --u-%name% prefix are processed. The values of these options
-;;;   ​​will be written to environment variables named EMAX_%NAME%.
-;;;   The current configuration uses the following environment variables:
-;;;   EMAX_PRF - Determines which initialization file will be loaded
-;;;   EMAX_THM - Overrides the Emacs color theme
-;;;   EMAX_JOB - A job script to run when Emacs starts
-;;;   example:  emacs --u-prf=devel --u-thm=wombat
-;;;             equivalent to the startup command
-;;;             env EMAX_PRF=devel EMAX_THM=wombat emacs
-;;; 
-;;; 2. Global variables that have values ​​for configuration settings are initialized
-;;;   cfg/profile - specifies which startup script will be used.
-;;;   Possible values: actual(default), built-in, craft, devel.
-;;; 
-;;; 3. Setting up paths, keep the configuration directory clean and tidy.
-;;;   Functions that return paths to configuration files are defined
-;;;   to ensure the configuration directory is kept in order.
-;;; 
-;;; 4. Tuning of performance
+
+;; This file performs initial configuration initialization.
+;; It's a good place to set up debugging options.
+
+;; 1. Additional command line arguments starting with the
+;;   --u-%name% prefix are processed. The values of these options
+;;   ​​will be written to environment variables named EMAX_%NAME%.
+;;   The current configuration uses the following environment variables:
+;;   EMAX_PRF - Determines which initialization file will be loaded
+;;   EMAX_THM - Overrides the Emacs color theme
+;;   EMAX_JOB - A job script to run when Emacs starts
+;;   example:  emacs --u-prf=devel --u-thm=wombat
+;;             equivalent to the startup command
+;;             env EMAX_PRF=devel EMAX_THM=wombat emacs
+
+;; 2. Global variables that have values ​​for configuration settings are initialized
+;;   cfg/profile - specifies which startup script will be used.
+;;   Possible values: actual(default), built-in, craft, devel.
+
+;; 3. Setting up paths, keep the configuration directory clean and tidy.
+;;   Functions that return paths to configuration files are defined
+;;   to ensure the configuration directory is kept in order.
+
+;; 4. Tuning of performance
 
 ;;; Code:
 ;;;;; debug
@@ -54,6 +55,9 @@
   "User Emacs profile identity.")
 (defvar cfg/job (getenv "EMAX_JOB") "Job identity, type string.")
 (defvar cfg/directory user-emacs-directory "Path to config directory.")
+(defvar cfg/frame-title (format "%s%s☀%s" cfg/profile
+                                (if cfg/job (concat "-" cfg/job) "")
+                                system-name) "Emacs frame title.")
 
 ;;;;; paths for clean and order
 (defun cfg/path (arg)                   ; ~/.config/emacs/$arg
@@ -78,22 +82,18 @@
 (setq custom-file (cfg/path-s (format "custom-file-%s.el" cfg/profile)))
 
 ;;;;; micro tuning
-(let ((title (format "%s%s☀%s" cfg/profile
-                          (if cfg/job (concat "-" cfg/job) "")
-                          system-name)))
-  ;; (setq frame-title-format '( "GNU/Emacs " title))
-  (setq frame-title-format
-        '("GNU/Emacs"
-          (:eval (if tab-bar-mode
-                     (concat " ___/ " (cdr (assq 'name (tab-bar--current-tab))) " \\___ ") ""))
-          "<" title ">"))
-  )
+;; (setq frame-title-format '( "GNU/Emacs " title))
+(setq frame-title-format
+      '("GNU/Emacs"
+        (:eval (if tab-bar-mode
+                   (concat " ___/ " (cdr (assq 'name (tab-bar--current-tab))) " \\___ ") ""))
+        "<" cfg/frame-title ">"))
 
 ;;;;; performance
 (setq gc-cons-threshold (* 64 1024 1024)) ; run gc after threshold
 (setq read-process-output-max (* 1 1024 1024)) ; performance with language servers
 (setenv "LSP_USE_PLISTS" "true") ; tree-sitter performance enhancement
-(setq lsp-use-plists t)          ;
+;; (setq lsp-use-plists t)          ;
 
 ;;;;;
 (setq package-enable-at-startup nil)    ; must be called explicitly (package-initialize)

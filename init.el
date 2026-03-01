@@ -102,32 +102,112 @@
     (message "killless OFF")
     nil)
   )
-(define-minor-mode user-trmap-mode
-  "Minor mode which change `key-translation-map'."
-  :init-value nil
+;;; remap keybindings
+(defvar-keymap cfg-hk/open-config-map
+  :doc "Config"
+  :prefix 'cfg-hk/open-config-map-prefix
+  "1" '("Config" . (lambda () (interactive) (find-file (cfg/path "Config.org"))))
+  ;; "1" '("Config" . (i-event (find-file (cfg/path "Config.org"))))
+  "2" '("Cfg directory" . (lambda () (interactive) (project-switch-project (cfg/path ""))))
+  "3" '("Emacs early-init.el" . (lambda () (interactive) (find-file early-init-file)))
+  "4" '("Emacs init.el" . (lambda () (interactive) (find-file user-init-file)))
+  "5" '("Emacs custom-file" . (lambda () (interactive)
+                                (if (file-exists-p custom-file)
+                                   (find-file custom-file)
+                                  (message (format "file '%s' does not exist" custom-file)))))
+  "6" '("Emacs user dir" . (lambda () (interactive) (find-file user-emacs-directory)))
+  "Y" '("Yard directory" . (lambda () (interactive) (find-file (cfg/yard))))
+  "y" '("Yard config" . (lambda () (interactive) (find-file (cfg/yard "yard.org"))))
+  )
+(defvar-keymap cfg-hk/open-entities-map
+  :doc "Open frequently used entities."
+  :prefix 'cfg-hk/open-entities-map-prefix
+  "r" '("open recents" . recentf-open)
+  )
+(defvar-keymap cfg-hk/open-shelf-map
+  :doc "Open user shelf."
+  :prefix 'cfg-hk/open-shelf-map-prefix
+  "I" `("roam index" . (lambda ()(interactive) (find-file (cfg/org "index.org"))))
+  "M" `("math" . (lambda ()(interactive) (find-file (cfg/org "math.org"))))
+  "<f12>" `("Заметки" . (lambda ()(interactive) (find-file (cfg/path-s "help-daily.org")))))
+(defvar-keymap cfg-hk/run-commands-map
+  :doc "Run external commands."
+  :prefix 'cfg-hk/run-commands-map-prefix
+  ;; "a" `("emaxa" . (lambda () (interactive) (make-process :name "Emacs Air" :command "emaxa")))
+  )
+(defvar-keymap cfg-hk/update-ui-map
+  :doc "View changes."
+  :prefix 'cfg-hk/update-ui-map-prefix
+  "t" '("switch theme" . cfg/switch-theme))
+
+;; Emax major keymap
+(defvar-keymap cfg-hk/major-map
+  :doc "My main menu on long hand."
+  :prefix 'cfg-hk/major-map-prefix
+  "c" `("configure" . cfg-hk/open-config-map-prefix)
+  "o" `("open" . cfg-hk/open-entities-map-prefix)
+  ;; "r" `("run". cfg-hk/run-commands-map-prefix)
+  "u" `("ui" . cfg-hk/update-ui-map-prefix)
+  "k" '("kill less" . killless-mode)
+  "C-c" '("close emacs" .  save-buffers-kill-terminal)
+  "<f12>" `("shelf" . cfg-hk/open-shelf-map-prefix))
+;; Emax craft keymap
+(defvar-keymap cfg-hk/craft-map
+  :doc "My craft menu on short hand."
+  :prefix 'cfg-hk/craft-map-prefix
+  "?" '("help" . (lambda () (interactive) (find-file (cfg/path-s "jotting.org"))))
+  )
+;; Emax minor keymap
+(defvar-keymap cfg-hk/agile-map
+  :doc "My minor menu on short hand."
+  :prefix 'cfg-hk/agile-map-prefix
+  "s" '("tab switcher" . tab-switcher)
+  "t" '("treemacs" . treemacs)
+  "C-e" '("w-right" . windmove-right)
+  "C-f" '("w-right" . windmove-right)
+  "C-a" '("w-left" . windmove-left)
+  "C-b" '("w-left" . windmove-left)
+  "C-p" '("w-up" . windmove-up)
+  "C-n" '("w-down" . windmove-down))
+;;;
+;;; emax-hk-mode
+;;;
+(defvar-keymap emax-hk-mode-map
+  :doc "Keymap for emax hotkeys mode."
+  :name "name-of-hk-map"
+  :prefix 'emax-hk-mode-map-prefix
+  "M-j" #'execute-extended-command
+  "C-j" #'Control-X-prefix
+  "C-;" #'cfg-hk/agile-map-prefix
+  "C-." #'cfg-hk/craft-map-prefix
+  "<f12>" #'cfg-hk/major-map-prefix)
+;; (defcustom emax-hk-translate-keys nil
+;;   "Hide the comments too when you do an `hs-hide-all'."
+;;   :type 'boolean
+;;   :set )
+(define-minor-mode emax-hk-mode
+  "Minor mode with my emax hotkeys."
   :global t
-  :lighter " ⌘" ; ✧✲
-  (if user-trmap-mode
+  :lighter " ⌘" ; 🛠✧✲
+  :keymap emax-hk-mode-map
+  (if emax-hk-mode
       (progn
-        (keymap-set key-translation-map "C-j" "C-x")
-        (keymap-set key-translation-map "M-j" "M-x")
+        ;; (keymap-set key-translation-map "C-j" "C-x")
+        ;; (keymap-set key-translation-map "M-j" "M-x")
         (unless (display-graphic-p)
 ;;; <C-;> && <C-'> && <C-,> don't working in terminal
 ;;; <C-/> readed like <C-_>
           (keymap-set key-translation-map ";" "C-;")
           (keymap-set key-translation-map "C-x ;" ";")
-          (keymap-set key-translation-map "C-_" "C-/"))
-        (message "User key translation enabled"))
-    (progn
-      (keymap-unset key-translation-map "C-j")
-      (keymap-unset key-translation-map "M-j")
-      (unless (display-graphic-p)
-        (keymap-unset key-translation-map ";")
-        (keymap-unset key-translation-map "C-x ;")
-        (keymap-unset key-translation-map "C-_"))
-      (message "User key translation disabled"))
-    ) user-trmap-mode)
-(user-trmap-mode 1)
+          (keymap-set key-translation-map "C-_" "C-/")))
+    ;; (keymap-unset key-translation-map "C-j")
+    ;; (keymap-unset key-translation-map "M-j")
+    (unless (display-graphic-p)
+      (keymap-unset key-translation-map ";")
+      (keymap-unset key-translation-map "C-x ;")
+      (keymap-unset key-translation-map "C-_"))
+    ))
+(emax-hk-mode 1)
 
 ;;;
 ;;; thms--initialize
@@ -180,7 +260,7 @@
     (custom-set-variables
      '(blink-cursor-blinks 3600)   ; время мигания курсора при бездействии
      '(column-number-mode t)
-     '(display-line-numbers t)
+     '(display-line-numbers 'relative)
      '(fringe-mode 8 nil (fringe))
      '(hl-line-mode t)                 ; подсветка текущей строки
      '(inhibit-startup-screen t)
@@ -252,7 +332,8 @@
 ;;;
 ;;; lisp--emacs-customize
 ;;;
-(when (display-graphic-p (selected-frame))
+(when (and (display-graphic-p (selected-frame)) (eq cfg/profile 'craft))
+  (add-to-list 'initial-frame-alist '(fullscreen . maximized))
   (setopt cursor-type 'hollow))
 ;;; remap tree-sitter modes
 (setq major-mode-remap-alist
@@ -282,7 +363,7 @@
 ;;;;; folding code
 (add-hook 'prog-mode-hook #'hs-minor-mode)
 ;;;
-;;; lisp--additional-functions
+;;; lisp--cfg-functions
 ;;;
 (defun cfg/toggle-tab-bar-headers-visible (&optional visible)
   "Show/hide headers of tab bar.
@@ -295,6 +376,16 @@
                (if (eq tab-bar-show t) 100 t))))
     (customize-set-variable 'tab-bar-show tbs))
   (eq tab-bar-show t))
+(defun emax-sh (command)
+  "Run `start-process-shell-command' with COMMAND.
+NAME   set to \"sh:COMMAND\"
+BUFFER set to \"bf:COMMAND\"
+"
+  (interactive "sCommand: ")
+  (let ((name (concat "process: " command))
+        (buff (concat "bash: " command)))
+    (start-process-shell-command name buff command)
+    (display-buffer buff)))
 ;;;
 (load (cfg/path "data/help-quick-custom"))
 ;;; load profile

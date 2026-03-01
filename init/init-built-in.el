@@ -35,69 +35,15 @@
 
 (use-package emacs
   :ensure nil
-  :init
-  (defvar-keymap cfg/kmap-open-config :full t
-    :doc "Config"
-    "1" '("Config" . (lambda () (interactive) (find-file (cfg/path "Config.org"))))
-    ;; "1" '("Config" . (i-event (find-file (cfg/path "Config.org"))))
-    "2" '("Cfg directory" . (lambda () (interactive) (project-switch-project (cfg/path ""))))
-    "3" '("Emacs early-init.el" . (lambda () (interactive) (find-file early-init-file)))
-    "4" '("Emacs init.el" . (lambda () (interactive) (find-file user-init-file)))
-    "5" '("Emacs custom-file" . (lambda () (interactive)
-                                  (if (file-exists-p custom-file)
-                                     (find-file custom-file)
-                                    (message (format "file '%s' does not exist" custom-file)))))
-    "6" '("Emacs user dir" . (lambda () (interactive) (find-file user-emacs-directory)))
-    "Y" '("Yard directory" . (lambda () (interactive) (find-file (cfg/yard))))
-    "y" '("Yard config" . (lambda () (interactive) (find-file (cfg/yard "yard.org"))))
-    )
-  (defvar-keymap cfg/kmap-open-entities
-    :doc "Open frequently used entities."
-    "r" '("open recents" . recentf-open)
-    )
-  (defvar-keymap cfg/kmap-run-commands
-    :doc "Run external commands."
-    "a" `("emaxa" . (lambda () (interactive) (make-process :name "Emacs Air" :command "emaxa")))
-    )
-  (defvar-keymap cfg/kmap-user-shelf
-    :doc "Open user shelf."
-    "I" `("roam index" . (lambda ()(interactive) (find-file (cfg/org "index.org"))))
-    "M" `("math" . (lambda ()(interactive) (find-file (cfg/org "math.org"))))
-    "<f12>" `("Заметки" . (lambda ()(interactive) (find-file (cfg/path-s "help-daily.org")))))
-  (defvar-keymap cfg/kmap-update-ui
-    :doc "View changes."
-    "T" '("load theme" . cfg/load-theme)
-    "t" '("switch theme" . cfg/switch-theme))
-  ;; Craft IDE menu
-  (defvar-keymap cfg/kmap-craft-menu
-    :doc "My craft menu on short hand."
-    "?" '("help" . (lambda () (interactive) (find-file (cfg/path-s "jotting.org"))))
-    )
-  ;; Minor user menu
-  (defvar-keymap cfg/kmap-minor-menu
-    :doc "My minor menu on short hand."
-    "s" '("tab switcher" . tab-switcher)
-    "t" '("treemacs" . treemacs)
-    "C-e" '("w-right" . windmove-right)
-    "C-f" '("w-right" . windmove-right)
-    "C-a" '("w-left" . windmove-left)
-    "C-b" '("w-left" . windmove-left)
-    "C-p" '("w-up" . windmove-up)
-    "C-n" '("w-down" . windmove-down))
-  ;; Major user menu
-  (defvar-keymap cfg/kmap-major-menu
-    :doc "My main menu on long hand."
-    "c" `("configure" . ,cfg/kmap-open-config)
-    "o" `("open" . ,cfg/kmap-open-entities)
-    ;; "r" `("run". ,cfg/kmap-run-commands)
-    "u" `("ui" . ,cfg/kmap-update-ui)
-    "k" '("kill less" . killless-mode)
-    "C-c" '("close emacs" .  save-buffers-kill-terminal)
-    "<f12>" `("shelf" . ,cfg/kmap-user-shelf))
-  ;;
-  (keymap-set global-map "C-." cfg/kmap-craft-menu)
-  (keymap-set global-map "C-;" cfg/kmap-minor-menu)
-  (keymap-set global-map "<f12>" cfg/kmap-major-menu)
+  ;; :init
+  ;; (add-to-list 'display-buffer-alist
+  ;;              '("\\*rust-analyzer\\*"
+  ;;                (display-buffer-in-side-window)
+  ;;                (side . right)
+  ;;                (slot . 0)
+  ;;                (window-width . 80)
+  ;;                (window-parameters (no-delete-other-windows . nil))))
+
   )
 
 ;; (use-package desktop
@@ -150,13 +96,13 @@
       (switch-to-buffer buf)))
   :config
   (setq eww-search-prefix "https://lite.duckduckgo.com/lite/?q=")
-  (keymap-set cfg/kmap-user-shelf "<f2>"
+  (keymap-set cfg-hk/open-shelf-map "<f2>"
               '("Руководство по GNU Emacs" .
                 (lambda ()(interactive)(eww "https://alexott.net/ru/emacs/emacs-manual/"))))
-  (keymap-set cfg/kmap-user-shelf "<f3>"
+  (keymap-set cfg-hk/open-shelf-map "<f3>"
               `("Поиск в сети" .
                 (lambda ()(interactive)(eww "https://lite.duckduckgo.com/lite"))))
-  (keymap-set cfg/kmap-user-shelf "<f4>"
+  (keymap-set cfg-hk/open-shelf-map "<f4>"
               '("eww: текущий буфер" .
                 eww-render-buffer)))
 (use-package org
@@ -170,8 +116,8 @@
     (org-indent-mode 1)
     (variable-pitch-mode 0)
     (visual-line-mode 1))
-  (keymap-set cfg/kmap-open-entities "a" '("agenda" . org-agenda))
-  (keymap-set cfg/kmap-open-entities "s" '("schedule" . org-agenda-list))
+  (keymap-set cfg-hk/open-entities-map "a" '("agenda" . org-agenda))
+  (keymap-set cfg-hk/open-entities-map "s" '("schedule" . org-agenda-list))
   :bind-keymap
   ("C-c o" . org-mode-map)
   :custom
@@ -296,7 +242,7 @@
     "f" 'eglot-code-action-quickfix
     "r" 'eglot-rename
     "<f12>" 'eglot-ensure)
-  (keymap-set cfg/kmap-craft-menu "e" cfg/kmap-eglot)
+  (keymap-set cfg-hk/craft-map "e" cfg/kmap-eglot)
   (which-key-add-key-based-replacements "C-. e" "Eglot")
   ;; :hook (eglot--managed-mode . cfg//manually-activate-flymake)
   :custom

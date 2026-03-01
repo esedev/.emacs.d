@@ -35,69 +35,15 @@
 
 (use-package emacs
   :ensure nil
-  :init
-  (defvar-keymap cfg/kmap-open-config :full t
-    :doc "Config"
-    "1" '("Config" . (lambda () (interactive) (find-file (cfg/path "Config.org"))))
-    ;; "1" '("Config" . (i-event (find-file (cfg/path "Config.org"))))
-    "2" '("Cfg directory" . (lambda () (interactive) (project-switch-project (cfg/path ""))))
-    "3" '("Emacs early-init.el" . (lambda () (interactive) (find-file early-init-file)))
-    "4" '("Emacs init.el" . (lambda () (interactive) (find-file user-init-file)))
-    "5" '("Emacs custom-file" . (lambda () (interactive)
-                                  (if (file-exists-p custom-file)
-                                     (find-file custom-file)
-                                    (message (format "file '%s' does not exist" custom-file)))))
-    "6" '("Emacs user dir" . (lambda () (interactive) (find-file user-emacs-directory)))
-    "Y" '("Yard directory" . (lambda () (interactive) (find-file (cfg/yard))))
-    "y" '("Yard config" . (lambda () (interactive) (find-file (cfg/yard "yard.org"))))
-    )
-  (defvar-keymap cfg/kmap-open-entities
-    :doc "Open frequently used entities."
-    "r" '("open recents" . recentf-open)
-    )
-  (defvar-keymap cfg/kmap-run-commands
-    :doc "Run external commands."
-    "a" `("emaxa" . (lambda () (interactive) (make-process :name "Emacs Air" :command "emaxa")))
-    )
-  (defvar-keymap cfg/kmap-user-shelf
-    :doc "Open user shelf."
-    "I" `("roam index" . (lambda ()(interactive) (find-file (cfg/org "index.org"))))
-    "M" `("math" . (lambda ()(interactive) (find-file (cfg/org "math.org"))))
-    "<f12>" `("Заметки" . (lambda ()(interactive) (find-file (cfg/path-s "help-daily.org")))))
-  (defvar-keymap cfg/kmap-update-ui
-    :doc "View changes."
-    "T" '("load theme" . cfg/load-theme)
-    "t" '("switch theme" . cfg/switch-theme))
-  ;; Craft IDE menu
-  (defvar-keymap cfg/kmap-craft-menu
-    :doc "My craft menu on short hand."
-    "?" '("help" . (lambda () (interactive) (find-file (cfg/path-s "jotting.org"))))
-    )
-  ;; Minor user menu
-  (defvar-keymap cfg/kmap-minor-menu
-    :doc "My minor menu on short hand."
-    "s" '("tab switcher" . tab-switcher)
-    "t" '("treemacs" . treemacs)
-    "C-e" '("w-right" . windmove-right)
-    "C-f" '("w-right" . windmove-right)
-    "C-a" '("w-left" . windmove-left)
-    "C-b" '("w-left" . windmove-left)
-    "C-p" '("w-up" . windmove-up)
-    "C-n" '("w-down" . windmove-down))
-  ;; Major user menu
-  (defvar-keymap cfg/kmap-major-menu
-    :doc "My main menu on long hand."
-    "c" `("configure" . ,cfg/kmap-open-config)
-    "o" `("open" . ,cfg/kmap-open-entities)
-    ;; "r" `("run". ,cfg/kmap-run-commands)
-    "u" `("ui" . ,cfg/kmap-update-ui)
-    "k" '("kill less" . killless-mode)
-    "C-c" '("close emacs" .  save-buffers-kill-terminal)
-    "<f12>" `("shelf" . ,cfg/kmap-user-shelf))
-  ;;
-  (keymap-set global-map "C-." cfg/kmap-craft-menu)
-  (keymap-set global-map "C-;" cfg/kmap-minor-menu)
-  (keymap-set global-map "<f12>" cfg/kmap-major-menu)
+  ;; :init
+  ;; (add-to-list 'display-buffer-alist
+  ;;              '("\\*rust-analyzer\\*"
+  ;;                (display-buffer-in-side-window)
+  ;;                (side . right)
+  ;;                (slot . 0)
+  ;;                (window-width . 80)
+  ;;                (window-parameters (no-delete-other-windows . nil))))
+
   )
 
 ;; (use-package desktop
@@ -150,13 +96,13 @@
       (switch-to-buffer buf)))
   :config
   (setq eww-search-prefix "https://lite.duckduckgo.com/lite/?q=")
-  (keymap-set cfg/kmap-user-shelf "<f2>"
+  (keymap-set cfg-hk/open-shelf-map "<f2>"
               '("Руководство по GNU Emacs" .
                 (lambda ()(interactive)(eww "https://alexott.net/ru/emacs/emacs-manual/"))))
-  (keymap-set cfg/kmap-user-shelf "<f3>"
+  (keymap-set cfg-hk/open-shelf-map "<f3>"
               `("Поиск в сети" .
                 (lambda ()(interactive)(eww "https://lite.duckduckgo.com/lite"))))
-  (keymap-set cfg/kmap-user-shelf "<f4>"
+  (keymap-set cfg-hk/open-shelf-map "<f4>"
               '("eww: текущий буфер" .
                 eww-render-buffer)))
 (use-package org
@@ -170,8 +116,8 @@
     (org-indent-mode 1)
     (variable-pitch-mode 0)
     (visual-line-mode 1))
-  (keymap-set cfg/kmap-open-entities "a" '("agenda" . org-agenda))
-  (keymap-set cfg/kmap-open-entities "s" '("schedule" . org-agenda-list))
+  (keymap-set cfg-hk/open-entities-map "a" '("agenda" . org-agenda))
+  (keymap-set cfg-hk/open-entities-map "s" '("schedule" . org-agenda-list))
   :bind-keymap
   ("C-c o" . org-mode-map)
   :custom
@@ -317,8 +263,8 @@
   ;;(add-to-list 'completion-at-point-functions #'cape-tex)
   ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
   ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
-  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
-  ;;(add-to-list 'completion-at-point-functions #'cape-dict)
+  (add-to-list 'completion-at-point-functions #'cape-abbrev)
+  (add-to-list 'completion-at-point-functions #'cape-dict)
   ;;(add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
   ;;(add-to-list 'completion-at-point-functions #'cape-line)
 )
@@ -438,7 +384,7 @@
   ;;;; 5. No project support
   ;; (setq consult-project-function nil)
 )
-(use-package corfu
+(use-package corfu                      ; popup window for autocomplete
   :ensure t
   :pin gnu
   :custom
@@ -467,9 +413,10 @@
   :ensure t
   :pin gnu
   :bind (("C-h B" . embark-bindings)
-         :map cfg/kmap-major-menu
+         :map cfg-hk/major-map
          ("a" . embark-act)
-         :map cfg/kmap-minor-menu
+         :map cfg-hk/agile-map
+         ("a" . embark-act)
          ("M-;" . embark-dwim))
   :init
   ;; Optionally replace the key help with a completing-read interface
@@ -532,6 +479,7 @@
           (consult-grep buffer)
           (minor-mode reverse)
           (imenu buffer)
+          (emax-sh buffer)
           (t unobtrusive)))
   (setq vertico-multiform-commands '((consult-line (:not posframe))
                                      (t posframe)))
@@ -544,6 +492,128 @@
   :custom
   (vertico-posframe-parameters '((left-fringe . 8) (right-fringe . 8))))
 
+;; (use-package hydra ; short bindings with a common prefix (GNU)
+;;   :ensure t
+;;   :pin gnu
+;;   :demand t
+;;   :config
+;;   (defhydra hydra--toggle-mode (:hint nil)
+;;     "
+;;     ^
+;;     ^Toggle^   ^Emacs^              ^Ui^               ^Editor^
+;;     ^------^---^-----^--------------^--^---------------^------^---
+;;     _q_ quit   _h_ highlight line   _f_ fontaine       _m_ menu
+;;     ^^         _l_ long line wrap   _g_ golden ratio   _t_ treemacs
+;;     ^^         _w_ whitespaces      _o_ org modern     _T_ tab headers
+;;     _B_ ⌘   ^^                      _p_ paddings       _W_ Win tabs
+;;     _k_ LLL ^^                      _V_ V. posframe
+;;     "
+;;     ("q" nil)
+;;   
+;;     ("h" hl-line-mode)
+;;     ("l" visual-line-mode)
+;;     ("w" whitespace-mode)
+;;   
+;;     ;; ("f" fontaine-set-preset)
+;;     ("f" fontaine-mode)
+;;     ("g" golden-ratio-mode)
+;;     ("o" org-modern-mode)
+;;     ("p" spacious-padding-mode)
+;;     ("V" vertico-multiform-mode)
+;;   
+;;     ("m" menu-bar-mode)
+;;     ("t" treemacs)
+;;     ("T" cfg/toggle-tab-bar-headers-visible)
+;;     ("W" tab-line-mode)
+;;   
+;;     ("B" emax-hk-mode)
+;;     ("k" killless-mode))
+;;   
+;;   (defhydra hydra--play-games (:hint nil :color blue)
+;;     "
+;;     ^
+;;       ^Games
+;;       ^-------------
+;;       _!_ happy birthday
+;;       _D_ dunnet
+;;       _g_ gomoku
+;;       _l_ life
+;;       _m_ mines
+;;       _M_ mpuz
+;;       _s_ snake
+;;       _t_ solitaire
+;;       _z_ zone
+;;       _d_ doctor
+;;   
+;;       _q_ quit
+;;       ^-------------
+;;       "
+;;     ("!" animate-birthday-presint)
+;;     ("D" dunnet)
+;;     ("g" gomoku)
+;;     ("l" life)
+;;     ("m" mines)
+;;     ("M" mpuz)
+;;     ("s" snake)
+;;     ("t" solitaire)
+;;     ("z" zone)
+;;     ("d" doctor)
+;;     ("q" nil :color pink)
+;;   )
+;;   (defhydra hydra-helper--buf-move()
+;;     "move buffer"
+;;     ("s" buf-move-left "left")
+;;     ("e" buf-move-up "up")
+;;     ("d" buf-move-down "down")
+;;     ("f" buf-move-right "right")
+;;     ("SPC" nil "finished", :exit t))
+;;   
+;;   (keymap-set cfg-hk/update-ui-map "C-t" '("text scale" . hydra--text-scale/body))
+;;   (keymap-set cfg-hk/update-ui-map "w" '("window move" . hydra--window-move/body))
+;;   (keymap-set cfg-hk/major-map "g" '("games" . hydra--play-games/body))
+;;   (keymap-set cfg-hk/major-map "t" '("toggle" . hydra--toggle-mode/body))
+;;   
+;;   (keymap-global-set "M-O" 'hydra--window-move/body); window move
+;; )
+;; (use-package ace-window
+;;   :ensure t
+;;   :pin gnu
+;;   :config
+;;   (keymap-global-set "M-o" 'ace-window)
+;;   (setq aw-dispatch-always t)
+;;   )
+;; (use-package delight :ensure t :pin gnu)
+;; (use-package golden-ratio ; auto resize window by golden ratio
+;;   :ensure t
+;;   :pin nongnu
+;;   :delight "GdR"
+;;   ;; :hook (after-init . golden-ratio-mode)
+;;   :custom
+;;   (golden-ratio-exclude-modes '(occur-mode))
+;;   :config
+;;   (with-eval-after-load "which-key"
+;;     (add-to-list 'golden-ratio-inhibit-functions
+;;                  (lambda ()
+;;                    (and which-key--buffer
+;;                         (window-live-p (get-buffer-window which-key--buffer))))))
+;;   (keymap-global-set "C-x #" 'golden-ratio))
+;; (use-package move-text                  ; melpa-stable
+;;   :ensure t                             ; Using the prefix (C-u *number* or META *number*)
+;;   :demand t                             ; you can predefine how many lines move-text will travel.
+;;   :config (move-text-default-bindings))
+;; (use-package rainbow-mode ; colorize color names in buffers
+;;   :ensure t
+;;   :pin gnu
+;;   ;; :delight
+;;   :hook (prog-mode . rainbow-mode))
+;; (use-package rainbow-delimiters                ; highlight brackets according
+;;   :ensure t
+;;   :pin nongnu
+;;   :hook (prog-mode . rainbow-delimiters-mode)) ; to their depth
+;;;
+;;; role--emacs
+;;;
+;;;;; cozy
 (use-package hydra ; short bindings with a common prefix (GNU)
   :ensure t
   :pin gnu
@@ -557,7 +627,7 @@
     _q_ quit   _h_ highlight line   _f_ fontaine       _m_ menu
     ^^         _l_ long line wrap   _g_ golden ratio   _t_ treemacs
     ^^         _w_ whitespaces      _o_ org modern     _T_ tab headers
-    _U_ ⌘   ^^                      _p_ paddings       _W_ Win tabs
+    _B_ ⌘   ^^                      _p_ paddings       _W_ Win tabs
     _k_ LLL ^^                      _V_ V. posframe
     "
     ("q" nil)
@@ -578,7 +648,7 @@
     ("T" cfg/toggle-tab-bar-headers-visible)
     ("W" tab-line-mode)
   
-    ("U" user-trmap-mode)
+    ("B" emax-hk-mode)
     ("k" killless-mode))
   
   (defhydra hydra--play-games (:hint nil :color blue)
@@ -620,13 +690,34 @@
     ("f" buf-move-right "right")
     ("SPC" nil "finished", :exit t))
   
-  (keymap-set cfg/kmap-update-ui "C-t" '("text scale" . hydra--text-scale/body))
-  (keymap-set cfg/kmap-update-ui "w" '("window move" . hydra--window-move/body))
-  (keymap-set cfg/kmap-major-menu "g" '("games" . hydra--play-games/body))
-  (keymap-set cfg/kmap-major-menu "t" '("toggle" . hydra--toggle-mode/body))
+  (keymap-set cfg-hk/update-ui-map "C-t" '("text scale" . hydra--text-scale/body))
+  (keymap-set cfg-hk/update-ui-map "w" '("window move" . hydra--window-move/body))
+  (keymap-set cfg-hk/major-map "g" '("games" . hydra--play-games/body))
+  (keymap-set cfg-hk/major-map "t" '("toggle" . hydra--toggle-mode/body))
   
   (keymap-global-set "M-O" 'hydra--window-move/body); window move
 )
+(use-package yasnippet
+  :ensure t
+  :pin gnu
+  :delight (yas-minor-mode " Ya")
+  :defer t
+  :init
+  (use-package yasnippet-snippets
+    :ensure t
+    :pin nongnu
+    :requires yasnippet
+    :after yasnippet
+    )
+  :config
+  (setq yas-snippet-dirs
+      (list (cfg/path "data/snippets") ; personal snippets
+            yasnippet-snippets-dir
+        ))
+  (yas-reload-all)
+  (which-key-add-key-based-replacements "C-c &" "Yas")
+  :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
+  )
 (use-package ace-window
   :ensure t
   :pin gnu
@@ -638,10 +729,16 @@
 (use-package golden-ratio ; auto resize window by golden ratio
   :ensure t
   :pin nongnu
+  :delight "GdR"
   ;; :hook (after-init . golden-ratio-mode)
   :custom
   (golden-ratio-exclude-modes '(occur-mode))
   :config
+  (with-eval-after-load "which-key"
+    (add-to-list 'golden-ratio-inhibit-functions
+                 (lambda ()
+                   (and which-key--buffer
+                        (window-live-p (get-buffer-window which-key--buffer))))))
   (keymap-global-set "C-x #" 'golden-ratio))
 (use-package move-text                  ; melpa-stable
   :ensure t                             ; Using the prefix (C-u *number* or META *number*)
@@ -656,46 +753,269 @@
   :ensure t
   :pin nongnu
   :hook (prog-mode . rainbow-delimiters-mode)) ; to their depth
+(use-package emms                       ; emacs multimedia service
+  :ensure t
+  :pin gnu
+  :defer t)
+;; (use-package gt)   ; language translator
+(use-package nov                        ; epub reader
+  :ensure t
+  :pin nongnu
+  :defer t
+  :mode ("\\.epub\\'". nov-mode))
+(use-package tmr                        ; timers
+  :ensure t
+  :pin gnu
+  :defer t
+  :init
+  (keymap-set cfg-hk/open-entities-map "t" '("timers" . tmr-tabulated-view))
+  :config
+  (setq tmr-sound-file (cfg/path "data/sound/alert.ogg")))
+;;;;; org
+(use-package org-modern
+  :ensure t
+  :pin gnu
+  :if (display-graphic-p)
+  :after org
+  :custom
+  (org-modern-replace-stars "◉○✦✧▪▫º") ; ◉○✦✧▪▫º ⦿◎◉○✳
+  (org-modern-star 'replace)
+  :config
+  ;; Option 1: Per buffer
+  (add-hook 'org-mode-hook #'org-modern-mode)
+  (add-hook 'org-agenda-finalize-hook #'org-modern-agenda)
+  ;; Option 2: Globally
+  ;; (with-eval-after-load 'org (global-org-modern-mode))
+  )
+(use-package htmlize
+  :ensure t
+  :pin nongnu)
+;;;;; files
+;;;;; ui
+(use-package fontaine
+  :ensure t
+  :pin gnu
+  :defer t
+  :if (display-graphic-p)
+  :init
+  (keymap-set cfg-hk/update-ui-map "f" '("fontaine" . fontaine-set-preset))
+  :config
+  (setq fontaine-presets
+        '((regular)
+          (code
+           :default-family "Source Code Pro"
+           :default-weight normal)
+          (code-small
+           :inherit code
+           :default-height 80)
+          (code-large
+           :inherit code
+           :default-height 160
+           :variable-pitch-height 1.0
+           :tab-bar-height 0.9)
+          (educational-board
+           :default-family "Roboto Regular"
+           :default-height 240
+           :variable-pitch-height 1.0
+           :tab-bar-height 0.7)
+          (t
+           ;; <https://protesilaos.com/emacs/fontaine>.
+           :default-family "Adwaita Mono Regular"
+           :default-weight regular :default-slant normal :default-width normal
+           :default-height 120
+           :fixed-pitch-family "Adwaita Mono Regular" :fixed-pitch-weight nil
+           :fixed-pitch-slant nil :fixed-pitch-width nil :fixed-pitch-height 1.0 :fixed-pitch-serif-family nil :fixed-pitch-serif-weight nil
+           :fixed-pitch-serif-slant nil :fixed-pitch-serif-width nil
+           :fixed-pitch-serif-height 1.0 :variable-pitch-family "Sans"
+           :variable-pitch-weight nil :variable-pitch-slant nil
+           :variable-pitch-width nil :variable-pitch-height 1.0
+           :mode-line-active-family nil :mode-line-active-weight nil
+           :mode-line-active-slant nil :mode-line-active-width nil
+           :mode-line-active-height 1.0 :mode-line-inactive-family nil
+           :mode-line-inactive-weight nil :mode-line-inactive-slant nil
+           :mode-line-inactive-width nil :mode-line-inactive-height 1.0
+           :header-line-family nil :header-line-weight nil :header-line-slant nil :header-line-width nil :header-line-height 1.0
+           :line-number-family nil :line-number-weight nil :line-number-slant nil :line-number-width nil :line-number-height 1.0 :tab-bar-family nil :tab-bar-weight nil :tab-bar-slant nil :tab-bar-width nil
+           :tab-bar-height 1.0 :tab-line-family nil :tab-line-weight nil
+           :tab-line-slant nil :tab-line-width nil :tab-line-height 1.0
+           :bold-family nil :bold-slant nil :bold-weight bold :bold-width nil
+           :bold-height 1.0 :italic-family nil :italic-weight nil
+           :italic-slant italic :italic-width nil :italic-height 1.0
+           :line-spacing nil
+           )
+          ))
+  (setq frame-inhibit-implied-resize t)
+  (fontaine-set-preset 'regular)
+  (add-hook 'enable-theme-functions #'fontaine-apply-current-preset)
+  (fontaine-mode 1)
+  )
+(use-package spacious-padding
+  :ensure t
+  :pin gnu
+  :defer t
+  :if (display-graphic-p)
+  :init
+  (keymap-set cfg-hk/update-ui-map "p" '("paddings" . spacious-padding-mode))
+  :config
+  (setq spacious-padding-subtle-mode-line nil)
+  ;; (setq spacious-padding-subtle-mode-line
+  ;;     '(:mode-line-active error :mode-line-inactive shadow))
+  ;; (setq spacious-padding-subtle-mode-line
+  ;;     '(:mode-line-active "#0000ff" :mode-line-inactive "gray50"))
+  (setq spacious-padding-widths
+        '( :internal-border-width 20
+           :header-line-width 10
+           :mode-line-width 6
+           :tab-width 4
+           :right-divider-width 30
+           :scroll-bar-width 8
+           :fringe-width 8)))
+(use-package all-the-icons
+  :ensure t
+  :if (display-graphic-p)
+  )
+(use-package all-the-icons-dired
+  :ensure t
+  :if (display-graphic-p)
+  :hook (dired-mode . all-the-icons-dired-mode))
+(use-package ef-themes
+  :ensure t
+  :pin gnu)
+(use-package treemacs
+  :ensure t
+  :requires (ace-window hydra)
+  :after (ace-window hydra)
+  :defer t
+  :init
+  (use-package treemacs-all-the-icons
+    :ensure t
+    :requires (treemacs all-the-icons)
+    :if (display-graphic-p)
+    )
+  :bind (:map cfg-hk/agile-map
+              ("t" . treemacs)
+              ("C-t" . treemacs-select-window))
+  :custom
+  (treemacs-show-hidden-files t)
+  (treemacs-persist-file (cfg/path-u ".cache/treemacs-persist"))
+  :config
+  (treemacs-follow-mode t)
+  (treemacs-filewatch-mode t)
+  (treemacs-fringe-indicator-mode nil)
+  (treemacs-git-mode 'simple)
+  (treemacs-hide-gitignored-files-mode t)
+  (treemacs-project-follow-mode t)
+  (treemacs-filewatch-mode t)
 
-;; ;;;
-;; ;;; role--experimental
-;; ;;;
-;; 
-;; ;;;
-;; ;;; role--yard-of-test
-;; ;;;
-;; (use-package flycheck
-;;   :ensure t
-;;   :hook (after-init . global-flycheck-mode)
-;;   :config
-;;   (keymap-set cfg/kmap-craft-menu "f" flycheck-command-map)
-;;   (which-key-add-key-based-replacements "C-c !" "Flycheck")
-;;   (which-key-add-key-based-replacements "C-. f" "Flycheck"))
-;; (use-package lsp-mode
-;;   :ensure t
-;;   :init
-;;   (defun cfg/lsp-mode-setup ()
-;;       (keymap-set cfg/kmap-craft-menu "m" '("imenu" . lsp-ui-imenu)))
-;;   :hook (lsp-mode . cfg/lsp-mode-setup)
-;;   :custom (lsp-keymap-prefix "C-. l")
-;;   )
-;; (with-eval-after-load 'lsp-mode
-;;   (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
-;; (use-package lsp-treemacs
-;;   :ensure t
-;;   :requires (lsp-mode treemacs)
-;;   :after lsp-mode)
-;; (use-package lsp-ui
-;;   :ensure t
-;;   :requires lsp-mode)
-;; (use-package rustic
-;;   :ensure t
-;;   :delight "R✧stic!"
-;;   :custom
-;;   (rustic-cargo-use-last-stored-arguments t)
-;;   (rustic-format-on-save t)
-;;   :config
-;;   (which-key-add-key-based-replacements "C-c C-c" "Rustic"))
+  (which-key-add-key-based-replacements "C-c C-p" "treemacs prj")
+  (which-key-add-key-based-replacements "C-c C-p c" "collapse")
+  (which-key-add-key-based-replacements "C-c C-w" "treemacs wsp"))
+(use-package treemacs-magit
+  :ensure t
+  :defer t
+  :after (treemacs magit)
+  :requires (treemacs magit)
+  )
+(use-package mines
+  :ensure t
+  :pin gnu
+  :defer t)
+(use-package fireplace                  ; melpa-stable
+  :ensure t
+  :defer t)
+(use-package 2048-game                  ; melpa
+  :ensure t
+  :defer t)
+;;;;;
+
+;;;
+;;; role--experimental
+;;;
+(use-package popper
+  :ensure t
+  :pin gnu
+  :bind (:map cfg-hk/agile-map
+              ("C-;"   . popper-toggle)
+              ("SPC k"   . popper-kill-latest-popup)
+              ("RET" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          "\\*Compile-Log\\*"
+          help-mode
+          emacs-lisp-compilation-mode
+          flycheck-error-message-mode
+          compilation-mode))
+  (popper-mode +1)
+  (popper-echo-mode +1))                ; For echo area hints
+;;;
+;;; role--yard-of-test
+;;;
+(use-package flycheck
+  :ensure t
+  :hook (after-init . global-flycheck-mode)
+  :config
+  (keymap-set cfg-hk/craft-map "f" flycheck-command-map)
+  (which-key-add-key-based-replacements "C-c !" "Flycheck")
+  (which-key-add-key-based-replacements "C-. f" "Flycheck"))
+(use-package lsp-mode
+  :ensure t
+  :init
+  (defun cfg//lsp-mode-setup ()
+    (keymap-set cfg-hk/craft-map "C-." '("doc glance" . lsp-ui-doc-glance))
+    (keymap-set cfg-hk/craft-map "i" '("imenu" . lsp-ui-imenu)))
+  :hook (lsp-mode . cfg//lsp-mode-setup)
+  :custom (lsp-keymap-prefix "C-c l")
+  )
+(use-package consult-lsp :ensure t)     ; melpa-stable
+(with-eval-after-load 'lsp-mode
+  (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
+(use-package lsp-treemacs
+  :ensure t
+  :requires (lsp-mode treemacs)
+  :after lsp-mode)
+(use-package lsp-ui
+  :ensure t
+  :requires lsp-mode)
+(use-package rust-mode
+  :ensure t
+  :init
+  (setq rust-mode-treesitter-derive t))
+(use-package rustic
+  :ensure t
+  :delight "R✧stic!"
+  :after rust-mode
+  :custom
+  (rustic-cargo-use-last-stored-arguments t)
+  (rustic-format-on-save t)
+  :config
+  (which-key-add-key-based-replacements "C-c C-c" "Rustic"))
+(use-package dashboard                  ; melpa-stable
+  :ensure t
+  :config
+  (setq dashboard-banner-logo-title "(or Dev Die)")
+  (setq dashboard-startup-banner 2)
+  (setq dashboard-projects-backend 'project-el)
+  (setq dashboard-items '((recents . 5)
+                          (bookmarks . 5)
+                          (projects  . 5)
+                          (agenda    . 5)
+                          (registers . 5)))
+  ;; (when (display-graphic-p)
+  (setq dashboard-icon-type 'all-the-icons)
+  (setq dashboard-heading-icons '((recents   . "history")
+                                  (bookmarks . "bookmark")
+                                  (agenda    . "calendar")
+                                  (projects  . "rocket")
+                                  (registers . "database")))
+  (setq dashboard-set-heading-icons t)
+  (setq dashboard-set-file-icons t)
+    ;; )
+
+  (add-hook 'server-after-make-frame-hook 'dashboard-open)
+  (dashboard-setup-startup-hook))
 
 (provide 'init-devel)
 ;;; init-devel.el ends here

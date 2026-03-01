@@ -8,8 +8,7 @@
 #+begin_src emacs-lisp :noweb yes :tangle early-init.el
 ;;; early-init.el --- Emacs init script  -*- lexical-binding: t; -*-
 ;;; Commentary:
-;;; <<data--early-init-comment>>
-
+<<data--early-init-comment>>
 ;;; Code:
 ;;;;; debug
 (when init-file-debug
@@ -40,6 +39,9 @@
   "User Emacs profile identity.")
 (defvar cfg/job (getenv "EMAX_JOB") "Job identity, type string.")
 (defvar cfg/directory user-emacs-directory "Path to config directory.")
+(defvar cfg/frame-title (format "%s%s☀%s" cfg/profile
+                                (if cfg/job (concat "-" cfg/job) "")
+                                system-name) "Emacs frame title.")
 
 ;;;;; paths for clean and order
 (defun cfg/path (arg)                   ; ~/.config/emacs/$arg
@@ -64,22 +66,18 @@
 (setq custom-file (cfg/path-s (format "custom-file-%s.el" cfg/profile)))
 
 ;;;;; micro tuning
-(let ((title (format "%s%s☀%s" cfg/profile
-                          (if cfg/job (concat "-" cfg/job) "")
-                          system-name)))
-  ;; (setq frame-title-format '( "GNU/Emacs " title))
-  (setq frame-title-format
-        '("GNU/Emacs"
-          (:eval (if tab-bar-mode
-                     (concat " ___/ " (cdr (assq 'name (tab-bar--current-tab))) " \\___ ") ""))
-          "<" title ">"))
-  )
+;; (setq frame-title-format '( "GNU/Emacs " title))
+(setq frame-title-format
+      '("GNU/Emacs"
+        (:eval (if tab-bar-mode
+                   (concat " ___/ " (cdr (assq 'name (tab-bar--current-tab))) " \\___ ") ""))
+        "<" cfg/frame-title ">"))
 
 ;;;;; performance
 (setq gc-cons-threshold (* 64 1024 1024)) ; run gc after threshold
 (setq read-process-output-max (* 1 1024 1024)) ; performance with language servers
 (setenv "LSP_USE_PLISTS" "true") ; tree-sitter performance enhancement
-(setq lsp-use-plists t)          ;
+;; (setq lsp-use-plists t)          ;
 
 ;;;;;
 (setq package-enable-at-startup nil)    ; must be called explicitly (package-initialize)
@@ -175,7 +173,7 @@
 #+end_src
 * init/init-craft.el
 #+begin_src emacs-lisp :noweb yes :tangle init/init-craft.el
-;;; init-craft.el --- Light Emacs config  -*- lexical-binding: t; -*-
+;;; init-craft.el --- Emacs config like IDE  -*- lexical-binding: t; -*-
 <<data--copyright>>
 <<data--license-gpl-v3>>
 ;;; Commentary:
@@ -203,11 +201,12 @@
 ;;; Code:
 <<role--built-in--core>>
 <<role--navi--vertico>>
-<<pckg--hydra>>
-<<suit--emacs-editor>>
+;; <<pckg--hydra>>
+;; <<suit--emacs-editor>>
+<<role--emacs>>
 
-;; <<role--experimental>>
-;; <<role--yard-of-test>>
+<<role--experimental>>
+<<role--yard-of-test>>
 
 (provide 'init-devel)
 ;;; init-devel.el ends here
@@ -220,8 +219,13 @@
 (cfg//setup--override-keybindings)
 
 <<mode--killless-mode>>
-<<mode--user-trmap-mode>>
-(user-trmap-mode 1)
+;;; remap keybindings
+<<bind--minor-maps>>
+<<bind--major-map>>
+<<bind--craft-map>>
+<<bind--agile-map>>
+<<mode--emax-hk-mode>>
+(emax-hk-mode 1)
 
 <<thms--initialize>>
 ;;; customize
@@ -233,7 +237,8 @@
     <<cstm--electric-pairs>>
     ))
 <<lisp--emacs-customize>>
-<<lisp--additional-functions>>
+<<lisp--cfg-functions>>
+<<lisp--emax>>
 ;;;
 (load (cfg/path "data/help-quick-custom"))
 #+end_src
@@ -264,7 +269,8 @@
 ;;;
 ;;; lisp--emacs-customize
 ;;;
-(when (display-graphic-p (selected-frame))
+(when (and (display-graphic-p (selected-frame)) (eq cfg/profile 'craft))
+  (add-to-list 'initial-frame-alist '(fullscreen . maximized))
   (setopt cursor-type 'hollow))
 ;;; remap tree-sitter modes
 (setq major-mode-remap-alist
@@ -294,11 +300,11 @@
 ;;;;; folding code
 (add-hook 'prog-mode-hook #'hs-minor-mode)
 #+end_src
-* lisp--additional-functions
-#+name: lisp--additional-functions
+* lisp--cfg-functions
+#+name: lisp--cfg-functions
 #+begin_src emacs-lisp :results silent
 ;;;
-;;; lisp--additional-functions
+;;; lisp--cfg-functions
 ;;;
 (defun cfg/toggle-tab-bar-headers-visible (&optional visible)
   "Show/hide headers of tab bar.
@@ -312,6 +318,20 @@
     (customize-set-variable 'tab-bar-show tbs))
   (eq tab-bar-show t))
   #+end_src
+* lisp--emax
+#+name: lisp--emax
+#+begin_src emacs-lisp :results silent
+(defun emax-sh (command)
+  "Run `start-process-shell-command' with COMMAND.
+NAME   set to \"sh:COMMAND\"
+BUFFER set to \"bf:COMMAND\"
+"
+  (interactive "sCommand: ")
+  (let ((name (concat "process: " command))
+        (buff (concat "bash: " command)))
+    (start-process-shell-command name buff command)
+    (display-buffer buff)))
+#+end_src
 * =--Roles---------------------------------=
 * role--built-in--core
 #+name: role--built-in--core
@@ -406,7 +426,7 @@
 ;;;
 ;;; role--experimental
 ;;;
-
+<<pckg--popper>>
 #+end_src
 * role--yard-of-test
 #+name: role--yard-of-test
@@ -415,6 +435,7 @@
 ;;; role--yard-of-test
 ;;;
 <<suit--rustic-lsp-flycheck>>
+<<pckg--dashboard>>
 #+end_src
 * =------=
 * role--jobs
@@ -473,7 +494,7 @@
     "f" 'eglot-code-action-quickfix
     "r" 'eglot-rename
     "<f12>" 'eglot-ensure)
-  (keymap-set cfg/kmap-craft-menu "e" cfg/kmap-eglot)
+  (keymap-set cfg-hk/craft-map "e" cfg/kmap-eglot)
   (which-key-add-key-based-replacements "C-. e" "Eglot")
   ;; :hook (eglot--managed-mode . cfg//manually-activate-flymake)
   :custom
@@ -488,8 +509,15 @@
 #+begin_src emacs-lisp :noweb yes
 (use-package emacs
   :ensure nil
-  :init
-  <<bind--interactive-user-hotkeys>>
+  ;; :init
+  ;; (add-to-list 'display-buffer-alist
+  ;;              '("\\*rust-analyzer\\*"
+  ;;                (display-buffer-in-side-window)
+  ;;                (side . right)
+  ;;                (slot . 0)
+  ;;                (window-width . 80)
+  ;;                (window-parameters (no-delete-other-windows . nil))))
+
   )
 
 ;; (use-package desktop
@@ -525,13 +553,13 @@
       (switch-to-buffer buf)))
   :config
   (setq eww-search-prefix "https://lite.duckduckgo.com/lite/?q=")
-  (keymap-set cfg/kmap-user-shelf "<f2>"
+  (keymap-set cfg-hk/open-shelf-map "<f2>"
               '("Руководство по GNU Emacs" .
                 (lambda ()(interactive)(eww "https://alexott.net/ru/emacs/emacs-manual/"))))
-  (keymap-set cfg/kmap-user-shelf "<f3>"
+  (keymap-set cfg-hk/open-shelf-map "<f3>"
               `("Поиск в сети" .
                 (lambda ()(interactive)(eww "https://lite.duckduckgo.com/lite"))))
-  (keymap-set cfg/kmap-user-shelf "<f4>"
+  (keymap-set cfg-hk/open-shelf-map "<f4>"
               '("eww: текущий буфер" .
                 eww-render-buffer)))
 #+end_src
@@ -558,8 +586,8 @@
     (org-indent-mode 1)
     (variable-pitch-mode 0)
     (visual-line-mode 1))
-  (keymap-set cfg/kmap-open-entities "a" '("agenda" . org-agenda))
-  (keymap-set cfg/kmap-open-entities "s" '("schedule" . org-agenda-list))
+  (keymap-set cfg-hk/open-entities-map "a" '("agenda" . org-agenda))
+  (keymap-set cfg-hk/open-entities-map "s" '("schedule" . org-agenda-list))
   :bind-keymap
   ("C-c o" . org-mode-map)
   :custom
@@ -733,8 +761,8 @@
   ;;(add-to-list 'completion-at-point-functions #'cape-tex)
   ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
   ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
-  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
-  ;;(add-to-list 'completion-at-point-functions #'cape-dict)
+  (add-to-list 'completion-at-point-functions #'cape-abbrev)
+  (add-to-list 'completion-at-point-functions #'cape-dict)
   ;;(add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
   ;;(add-to-list 'completion-at-point-functions #'cape-line)
 )
@@ -862,7 +890,7 @@
 * pckg--corfu
 #+name: pckg--corfu
 #+begin_src emacs-lisp
-(use-package corfu
+(use-package corfu                      ; popup window for autocomplete
   :ensure t
   :pin gnu
   :custom
@@ -888,6 +916,34 @@
   :init
   (global-corfu-mode))
 #+end_src
+* pckg--dashboard
+#+name: pckg--dashboard
+#+begin_src emacs-lisp :results silent
+(use-package dashboard                  ; melpa-stable
+  :ensure t
+  :config
+  (setq dashboard-banner-logo-title "(or Dev Die)")
+  (setq dashboard-startup-banner 2)
+  (setq dashboard-projects-backend 'project-el)
+  (setq dashboard-items '((recents . 5)
+                          (bookmarks . 5)
+                          (projects  . 5)
+                          (agenda    . 5)
+                          (registers . 5)))
+  ;; (when (display-graphic-p)
+  (setq dashboard-icon-type 'all-the-icons)
+  (setq dashboard-heading-icons '((recents   . "history")
+                                  (bookmarks . "bookmark")
+                                  (agenda    . "calendar")
+                                  (projects  . "rocket")
+                                  (registers . "database")))
+  (setq dashboard-set-heading-icons t)
+  (setq dashboard-set-file-icons t)
+    ;; )
+
+  (add-hook 'server-after-make-frame-hook 'dashboard-open)
+  (dashboard-setup-startup-hook))
+#+end_src
 * pckg--d-mode
 #+name: pckg--d-mode
 #+begin_src emacs-lisp
@@ -907,9 +963,10 @@
   :ensure t
   :pin gnu
   :bind (("C-h B" . embark-bindings)
-         :map cfg/kmap-major-menu
+         :map cfg-hk/major-map
          ("a" . embark-act)
-         :map cfg/kmap-minor-menu
+         :map cfg-hk/agile-map
+         ("a" . embark-act)
          ("M-;" . embark-dwim))
   :init
   ;; Optionally replace the key help with a completing-read interface
@@ -948,7 +1005,7 @@
   :defer t
   :if (display-graphic-p)
   :init
-  (keymap-set cfg/kmap-update-ui "f" '("fontaine" . fontaine-set-preset))
+  (keymap-set cfg-hk/update-ui-map "f" '("fontaine" . fontaine-set-preset))
   :config
   (setq fontaine-presets
         '((regular)
@@ -1086,7 +1143,29 @@
   ;; (with-eval-after-load 'org (global-org-modern-mode))
   )
 #+end_src
-
+* pckg--popper
+#+name: pckg--popper
+#+begin_src emacs-lisp :results silent
+(use-package popper
+  :ensure t
+  :pin gnu
+  :bind (:map cfg-hk/agile-map
+              ("C-;"   . popper-toggle)
+              ("SPC k"   . popper-kill-latest-popup)
+              ("RET" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          "\\*Compile-Log\\*"
+          help-mode
+          emacs-lisp-compilation-mode
+          flycheck-error-message-mode
+          compilation-mode))
+  (popper-mode +1)
+  (popper-echo-mode +1))                ; For echo area hints
+#+end_src
 * pckg--spacious-padding
 #+name: pckg--spacious-padding
 #+begin_src emacs-lisp
@@ -1096,7 +1175,7 @@
   :defer t
   :if (display-graphic-p)
   :init
-  (keymap-set cfg/kmap-update-ui "p" '("paddings" . spacious-padding-mode))
+  (keymap-set cfg-hk/update-ui-map "p" '("paddings" . spacious-padding-mode))
   :config
   (setq spacious-padding-subtle-mode-line nil)
   ;; (setq spacious-padding-subtle-mode-line
@@ -1126,7 +1205,7 @@
     :requires (treemacs all-the-icons)
     :if (display-graphic-p)
     )
-  :bind (:map cfg/kmap-minor-menu
+  :bind (:map cfg-hk/agile-map
               ("t" . treemacs)
               ("C-t" . treemacs-select-window))
   :custom
@@ -1201,6 +1280,7 @@
           (consult-grep buffer)
           (minor-mode reverse)
           (imenu buffer)
+          (emax-sh buffer)
           (t unobtrusive)))
   (setq vertico-multiform-commands '((consult-line (:not posframe))
                                      (t posframe)))
@@ -1254,10 +1334,16 @@
 (use-package golden-ratio ; auto resize window by golden ratio
   :ensure t
   :pin nongnu
+  :delight "GdR"
   ;; :hook (after-init . golden-ratio-mode)
   :custom
   (golden-ratio-exclude-modes '(occur-mode))
   :config
+  (with-eval-after-load "which-key"
+    (add-to-list 'golden-ratio-inhibit-functions
+                 (lambda ()
+                   (and which-key--buffer
+                        (window-live-p (get-buffer-window which-key--buffer))))))
   (keymap-global-set "C-x #" 'golden-ratio))
 (use-package move-text                  ; melpa-stable
   :ensure t                             ; Using the prefix (C-u *number* or META *number*)
@@ -1291,7 +1377,7 @@
   :pin gnu
   :defer t
   :init
-  (keymap-set cfg/kmap-open-entities "t" '("timers" . tmr-tabulated-view))
+  (keymap-set cfg-hk/open-entities-map "t" '("timers" . tmr-tabulated-view))
   :config
   (setq tmr-sound-file (cfg/path "data/sound/alert.ogg")))
 #+end_src
@@ -1355,17 +1441,19 @@
   :ensure t
   :hook (after-init . global-flycheck-mode)
   :config
-  (keymap-set cfg/kmap-craft-menu "f" flycheck-command-map)
+  (keymap-set cfg-hk/craft-map "f" flycheck-command-map)
   (which-key-add-key-based-replacements "C-c !" "Flycheck")
   (which-key-add-key-based-replacements "C-. f" "Flycheck"))
 (use-package lsp-mode
   :ensure t
   :init
-  (defun cfg/lsp-mode-setup ()
-      (keymap-set cfg/kmap-craft-menu "m" '("imenu" . lsp-ui-imenu)))
-  :hook (lsp-mode . cfg/lsp-mode-setup)
-  :custom (lsp-keymap-prefix "C-. l")
+  (defun cfg//lsp-mode-setup ()
+    (keymap-set cfg-hk/craft-map "C-." '("doc glance" . lsp-ui-doc-glance))
+    (keymap-set cfg-hk/craft-map "i" '("imenu" . lsp-ui-imenu)))
+  :hook (lsp-mode . cfg//lsp-mode-setup)
+  :custom (lsp-keymap-prefix "C-c l")
   )
+(use-package consult-lsp :ensure t)     ; melpa-stable
 (with-eval-after-load 'lsp-mode
   (add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration))
 (use-package lsp-treemacs
@@ -1375,6 +1463,46 @@
 (use-package lsp-ui
   :ensure t
   :requires lsp-mode)
+(use-package rust-mode
+  :ensure t
+  :init
+  (setq rust-mode-treesitter-derive t))
+(use-package rustic
+  :ensure t
+  :delight "R✧stic!"
+  :after rust-mode
+  :custom
+  (rustic-cargo-use-last-stored-arguments t)
+  (rustic-format-on-save t)
+  :config
+  (which-key-add-key-based-replacements "C-c C-c" "Rustic"))
+#+end_src
+* suit--rustic-lsp-flycheck2
+#+name: suit--rustic-lsp-flycheck
+#+begin_src emacs-lisp :results silent
+(use-package flycheck
+  :ensure t
+  :hook (after-init . global-flycheck-mode)
+  :config
+  (keymap-set cfg-hk/craft-map "f" flycheck-command-map)
+  (which-key-add-key-based-replacements "C-c !" "Flycheck")
+  (which-key-add-key-based-replacements "C-. f" "Flycheck"))
+(use-package lsp-mode
+  :ensure t
+  :commands (lsp lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
+  :hook (rustic-mode . lsp-deferred)
+  :config
+  (lsp-enable-which-key-integration t))
+(use-package lsp-treemacs
+  :ensure t
+  ;; :requires (lsp-mode treemacs)
+  :after lsp)
+(use-package lsp-ui
+  :ensure t
+  ;; (:requires lsp-mode)
+  :hook (lsp-mode . lsp-ui-mode))
 (use-package rustic
   :ensure t
   :delight "R✧stic!"
@@ -1418,34 +1546,47 @@
     nil)
   )
 #+end_src
-* mode--user-trmap-mode
-#+name: mode--user-trmap-mode
+* mode--emax-hk-mode
+#+name: mode--emax-hk-mode
 #+begin_src emacs-lisp :results silent
-(define-minor-mode user-trmap-mode
-  "Minor mode which change `key-translation-map'."
-  :init-value nil
+;;;
+;;; emax-hk-mode
+;;;
+(defvar-keymap emax-hk-mode-map
+  :doc "Keymap for emax hotkeys mode."
+  :name "name-of-hk-map"
+  :prefix 'emax-hk-mode-map-prefix
+  "M-j" #'execute-extended-command
+  "C-j" #'Control-X-prefix
+  "C-;" #'cfg-hk/agile-map-prefix
+  "C-." #'cfg-hk/craft-map-prefix
+  "<f12>" #'cfg-hk/major-map-prefix)
+;; (defcustom emax-hk-translate-keys nil
+;;   "Hide the comments too when you do an `hs-hide-all'."
+;;   :type 'boolean
+;;   :set )
+(define-minor-mode emax-hk-mode
+  "Minor mode with my emax hotkeys."
   :global t
-  :lighter " ⌘" ; ✧✲
-  (if user-trmap-mode
+  :lighter " ⌘" ; 🛠✧✲
+  :keymap emax-hk-mode-map
+  (if emax-hk-mode
       (progn
-        (keymap-set key-translation-map "C-j" "C-x")
-        (keymap-set key-translation-map "M-j" "M-x")
+        ;; (keymap-set key-translation-map "C-j" "C-x")
+        ;; (keymap-set key-translation-map "M-j" "M-x")
         (unless (display-graphic-p)
 ;;; <C-;> && <C-'> && <C-,> don't working in terminal
 ;;; <C-/> readed like <C-_>
           (keymap-set key-translation-map ";" "C-;")
           (keymap-set key-translation-map "C-x ;" ";")
-          (keymap-set key-translation-map "C-_" "C-/"))
-        (message "User key translation enabled"))
-    (progn
-      (keymap-unset key-translation-map "C-j")
-      (keymap-unset key-translation-map "M-j")
-      (unless (display-graphic-p)
-        (keymap-unset key-translation-map ";")
-        (keymap-unset key-translation-map "C-x ;")
-        (keymap-unset key-translation-map "C-_"))
-      (message "User key translation disabled"))
-    ) user-trmap-mode)
+          (keymap-set key-translation-map "C-_" "C-/")))
+    ;; (keymap-unset key-translation-map "C-j")
+    ;; (keymap-unset key-translation-map "M-j")
+    (unless (display-graphic-p)
+      (keymap-unset key-translation-map ";")
+      (keymap-unset key-translation-map "C-x ;")
+      (keymap-unset key-translation-map "C-_"))
+    ))
 #+end_src
 * =--Keybindings---------------------------=
 * bind--override-standard
@@ -1473,12 +1614,53 @@
 
 (keymap-global-set "C-x !" 'shrink-window)
 #+end_src
-* bind--interactive-user-hotkeys
-/The keys are bind when the *emacs* package included/ [[*pckg--emacs]]
-#+name: bind--interactive-user-hotkeys
-#+begin_src emacs-lisp
-(defvar-keymap cfg/kmap-open-config :full t
+* bind--agile-map
+#+name: bind--agile-map
+#+begin_src emacs-lisp :results silent
+;; Emax minor keymap
+(defvar-keymap cfg-hk/agile-map
+  :doc "My minor menu on short hand."
+  :prefix 'cfg-hk/agile-map-prefix
+  "s" '("tab switcher" . tab-switcher)
+  "t" '("treemacs" . treemacs)
+  "C-e" '("w-right" . windmove-right)
+  "C-f" '("w-right" . windmove-right)
+  "C-a" '("w-left" . windmove-left)
+  "C-b" '("w-left" . windmove-left)
+  "C-p" '("w-up" . windmove-up)
+  "C-n" '("w-down" . windmove-down))
+#+end_src
+* bind--craft-map
+#+name: bind--craft-map
+#+begin_src emacs-lisp :results silent
+;; Emax craft keymap
+(defvar-keymap cfg-hk/craft-map
+  :doc "My craft menu on short hand."
+  :prefix 'cfg-hk/craft-map-prefix
+  "?" '("help" . (lambda () (interactive) (find-file (cfg/path-s "jotting.org"))))
+  )
+#+end_src
+* bind--major-map
+#+name: bind--major-map
+#+begin_src emacs-lisp :results silent
+;; Emax major keymap
+(defvar-keymap cfg-hk/major-map
+  :doc "My main menu on long hand."
+  :prefix 'cfg-hk/major-map-prefix
+  "c" `("configure" . cfg-hk/open-config-map-prefix)
+  "o" `("open" . cfg-hk/open-entities-map-prefix)
+  ;; "r" `("run". cfg-hk/run-commands-map-prefix)
+  "u" `("ui" . cfg-hk/update-ui-map-prefix)
+  "k" '("kill less" . killless-mode)
+  "C-c" '("close emacs" .  save-buffers-kill-terminal)
+  "<f12>" `("shelf" . cfg-hk/open-shelf-map-prefix))
+#+end_src
+* bind--minor-maps
+#+name: bind--minor-maps
+#+begin_src emacs-lisp :results silent
+(defvar-keymap cfg-hk/open-config-map
   :doc "Config"
+  :prefix 'cfg-hk/open-config-map-prefix
   "1" '("Config" . (lambda () (interactive) (find-file (cfg/path "Config.org"))))
   ;; "1" '("Config" . (i-event (find-file (cfg/path "Config.org"))))
   "2" '("Cfg directory" . (lambda () (interactive) (project-switch-project (cfg/path ""))))
@@ -1492,53 +1674,27 @@
   "Y" '("Yard directory" . (lambda () (interactive) (find-file (cfg/yard))))
   "y" '("Yard config" . (lambda () (interactive) (find-file (cfg/yard "yard.org"))))
   )
-(defvar-keymap cfg/kmap-open-entities
+(defvar-keymap cfg-hk/open-entities-map
   :doc "Open frequently used entities."
+  :prefix 'cfg-hk/open-entities-map-prefix
   "r" '("open recents" . recentf-open)
   )
-(defvar-keymap cfg/kmap-run-commands
-  :doc "Run external commands."
-  "a" `("emaxa" . (lambda () (interactive) (make-process :name "Emacs Air" :command "emaxa")))
-  )
-(defvar-keymap cfg/kmap-user-shelf
+(defvar-keymap cfg-hk/open-shelf-map
   :doc "Open user shelf."
+  :prefix 'cfg-hk/open-shelf-map-prefix
   "I" `("roam index" . (lambda ()(interactive) (find-file (cfg/org "index.org"))))
   "M" `("math" . (lambda ()(interactive) (find-file (cfg/org "math.org"))))
   "<f12>" `("Заметки" . (lambda ()(interactive) (find-file (cfg/path-s "help-daily.org")))))
-(defvar-keymap cfg/kmap-update-ui
-  :doc "View changes."
-  "T" '("load theme" . cfg/load-theme)
-  "t" '("switch theme" . cfg/switch-theme))
-;; Craft IDE menu
-(defvar-keymap cfg/kmap-craft-menu
-  :doc "My craft menu on short hand."
-  "?" '("help" . (lambda () (interactive) (find-file (cfg/path-s "jotting.org"))))
+(defvar-keymap cfg-hk/run-commands-map
+  :doc "Run external commands."
+  :prefix 'cfg-hk/run-commands-map-prefix
+  ;; "a" `("emaxa" . (lambda () (interactive) (make-process :name "Emacs Air" :command "emaxa")))
   )
-;; Minor user menu
-(defvar-keymap cfg/kmap-minor-menu
-  :doc "My minor menu on short hand."
-  "s" '("tab switcher" . tab-switcher)
-  "t" '("treemacs" . treemacs)
-  "C-e" '("w-right" . windmove-right)
-  "C-f" '("w-right" . windmove-right)
-  "C-a" '("w-left" . windmove-left)
-  "C-b" '("w-left" . windmove-left)
-  "C-p" '("w-up" . windmove-up)
-  "C-n" '("w-down" . windmove-down))
-;; Major user menu
-(defvar-keymap cfg/kmap-major-menu
-  :doc "My main menu on long hand."
-  "c" `("configure" . ,cfg/kmap-open-config)
-  "o" `("open" . ,cfg/kmap-open-entities)
-  ;; "r" `("run". ,cfg/kmap-run-commands)
-  "u" `("ui" . ,cfg/kmap-update-ui)
-  "k" '("kill less" . killless-mode)
-  "C-c" '("close emacs" .  save-buffers-kill-terminal)
-  "<f12>" `("shelf" . ,cfg/kmap-user-shelf))
-;;
-(keymap-set global-map "C-." cfg/kmap-craft-menu)
-(keymap-set global-map "C-;" cfg/kmap-minor-menu)
-(keymap-set global-map "<f12>" cfg/kmap-major-menu)
+(defvar-keymap cfg-hk/update-ui-map
+  :doc "View changes."
+  :prefix 'cfg-hk/update-ui-map-prefix
+  "t" '("switch theme" . cfg/switch-theme))
+
 #+end_src
 * bind--hydra-hotkeys
 /The keys are bind when the *hidra* package included/ [[*pckg--hydra]]
@@ -1549,10 +1705,10 @@
 <<bind--hydra-games>>
 <<bind--hydra-misc>>
 
-(keymap-set cfg/kmap-update-ui "C-t" '("text scale" . hydra--text-scale/body))
-(keymap-set cfg/kmap-update-ui "w" '("window move" . hydra--window-move/body))
-(keymap-set cfg/kmap-major-menu "g" '("games" . hydra--play-games/body))
-(keymap-set cfg/kmap-major-menu "t" '("toggle" . hydra--toggle-mode/body))
+(keymap-set cfg-hk/update-ui-map "C-t" '("text scale" . hydra--text-scale/body))
+(keymap-set cfg-hk/update-ui-map "w" '("window move" . hydra--window-move/body))
+(keymap-set cfg-hk/major-map "g" '("games" . hydra--play-games/body))
+(keymap-set cfg-hk/major-map "t" '("toggle" . hydra--toggle-mode/body))
 
 (keymap-global-set "M-O" 'hydra--window-move/body); window move
 #+end_src
@@ -1567,7 +1723,7 @@
   _q_ quit   _h_ highlight line   _f_ fontaine       _m_ menu
   ^^         _l_ long line wrap   _g_ golden ratio   _t_ treemacs
   ^^         _w_ whitespaces      _o_ org modern     _T_ tab headers
-  _U_ ⌘   ^^                      _p_ paddings       _W_ Win tabs
+  _B_ ⌘   ^^                      _p_ paddings       _W_ Win tabs
   _k_ LLL ^^                      _V_ V. posframe
   "
   ("q" nil)
@@ -1588,7 +1744,7 @@
   ("T" cfg/toggle-tab-bar-headers-visible)
   ("W" tab-line-mode)
 
-  ("U" user-trmap-mode)
+  ("B" emax-hk-mode)
   ("k" killless-mode))
 #+end_src
 ** bind--hydra-change-windows
@@ -1699,7 +1855,7 @@
 (custom-set-variables
  '(blink-cursor-blinks 3600)   ; время мигания курсора при бездействии
  '(column-number-mode t)
- '(display-line-numbers t)
+ '(display-line-numbers 'relative)
  '(fringe-mode 8 nil (fringe))
  '(hl-line-mode t)                 ; подсветка текущей строки
  '(inhibit-startup-screen t)
@@ -2031,29 +2187,31 @@
 #+end_src
 * data--early-init-comment
 #+name: data--early-init-comment
-#+begin_src plain :results silent
-This file performs initial configuration initialization.
-It's a good place to set up debugging options.
+#+begin_src emacs-lisp :results silent
 
-1. Additional command line arguments starting with the
-  --u-%name% prefix are processed. The values of these options
-  ​​will be written to environment variables named EMAX_%NAME%.
-  The current configuration uses the following environment variables:
-  EMAX_PRF - Determines which initialization file will be loaded
-  EMAX_THM - Overrides the Emacs color theme
-  EMAX_JOB - A job script to run when Emacs starts
-  example:  emacs --u-prf=devel --u-thm=wombat
-            equivalent to the startup command
-            env EMAX_PRF=devel EMAX_THM=wombat emacs
+;; This file performs initial configuration initialization.
+;; It's a good place to set up debugging options.
 
-2. Global variables that have values ​​for configuration settings are initialized
-  cfg/profile - specifies which startup script will be used.
-  Possible values: actual(default), built-in, craft, devel.
+;; 1. Additional command line arguments starting with the
+;;   --u-%name% prefix are processed. The values of these options
+;;   ​​will be written to environment variables named EMAX_%NAME%.
+;;   The current configuration uses the following environment variables:
+;;   EMAX_PRF - Determines which initialization file will be loaded
+;;   EMAX_THM - Overrides the Emacs color theme
+;;   EMAX_JOB - A job script to run when Emacs starts
+;;   example:  emacs --u-prf=devel --u-thm=wombat
+;;             equivalent to the startup command
+;;             env EMAX_PRF=devel EMAX_THM=wombat emacs
 
-3. Setting up paths, keep the configuration directory clean and tidy.
-  Functions that return paths to configuration files are defined
-  to ensure the configuration directory is kept in order.
+;; 2. Global variables that have values ​​for configuration settings are initialized
+;;   cfg/profile - specifies which startup script will be used.
+;;   Possible values: actual(default), built-in, craft, devel.
 
-4. Tuning of performance
+;; 3. Setting up paths, keep the configuration directory clean and tidy.
+;;   Functions that return paths to configuration files are defined
+;;   to ensure the configuration directory is kept in order.
+
+;; 4. Tuning of performance
+
 #+end_src
 * =----------------------------------------=
