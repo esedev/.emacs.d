@@ -27,7 +27,7 @@
   :custom
   ;; (use-package-always-defer t)
   (use-package-minimum-reported-time 0.05)
-  (use-package-verbose nil))
+  (use-package-verbose (cfg/verbose-p)))
 ;;;;; end of configure package manager
 ;;; performance
 (add-hook 'emacs-startup-hook
@@ -92,9 +92,9 @@
       (progn
         (setq backup-confirm-pred (eval (car (get 'confirm-kill-emacs 'customized-value))))
         (setq confirm-kill-emacs (lambda (&rest args)
-                                         (progn
-                                           (message "Realy? Emacs is killless!")
-                                           nil)))
+                                   (progn
+                                     (message "Realy? Emacs is killless!")
+                                     nil)))
         (message "killless ON")
         nil)
     (setq confirm-kill-emacs backup-confirm-pred)
@@ -108,7 +108,7 @@
   :prefix 'cfg-hk/open-config-map-prefix
   "1" '("Config" . (lambda () (interactive) (find-file (cfg/path "Config.org"))))
   ;; "1" '("Config" . (i-event (find-file (cfg/path "Config.org"))))
-  "2" '("Cfg directory" . (lambda () (interactive) (project-switch-project (cfg/path ""))))
+  "2" '("Cfg directory" . (lambda () (interactive) (dired (cfg/path ""))))
   "3" '("Emacs early-init.el" . (lambda () (interactive) (find-file early-init-file)))
   "4" '("Emacs init.el" . (lambda () (interactive) (find-file user-init-file)))
   "5" '("Emacs custom-file" . (lambda () (interactive)
@@ -127,8 +127,10 @@
 (defvar-keymap cfg-hk/open-shelf-map
   :doc "Open user shelf."
   :prefix 'cfg-hk/open-shelf-map-prefix
-  "I" `("roam index" . (lambda ()(interactive) (find-file (cfg/org "index.org"))))
-  "M" `("math" . (lambda ()(interactive) (find-file (cfg/org "math.org"))))
+  "TAB" `("swarm" . (lambda ()(interactive) (find-file (cfg/org "swarm/index.org"))))
+  "M" `("math" . (lambda ()(interactive) (find-file (cfg/org "swarm/math.org"))))
+  "P" `("photo" . (lambda ()(interactive) (find-file (cfg/org "swarm/photo.org"))))
+  "j" `("job" . (lambda ()(interactive) (find-file (cfg/org "job.org"))))
   "<f12>" `("Заметки" . (lambda ()(interactive) (find-file (cfg/path-s "help-daily.org")))))
 (defvar-keymap cfg-hk/run-commands-map
   :doc "Run external commands."
@@ -265,6 +267,7 @@
      '(hl-line-mode t)                 ; подсветка текущей строки
      '(inhibit-startup-screen t)
      '(menu-bar-mode nil)
+     '(project-mode-line t)                 ; show current project
      '(scroll-bar-mode nil)
      '(scroll-step 1)
      '(tab-bar-mode t)                      ; using tab bars
@@ -366,7 +369,7 @@
 ;;; lisp--cfg-functions
 ;;;
 (defun cfg/toggle-tab-bar-headers-visible (&optional visible)
-  "Show/hide headers of tab bar.
+  "Show/Hide headers of tab bar.
    If argument VISIBLE is nil, then toggle visible of headers.
    If argument VISIBLE <= 0, then hide headers.
    If argument VISIBLE > 0, then show headers."
@@ -376,6 +379,15 @@
                (if (eq tab-bar-show t) 100 t))))
     (customize-set-variable 'tab-bar-show tbs))
   (eq tab-bar-show t))
+(defun cfg/toggle-display-line-numbers ()
+  "Show/Hide display line numbers."
+  (interactive)
+  (cond
+   ((eq display-line-numbers 'relative) (menu-bar--display-line-numbers-mode-visual))
+   ((eq display-line-numbers 'visual) (menu-bar--display-line-numbers-mode-none))
+   (display-line-numbers (menu-bar--display-line-numbers-mode-relative))
+   (t (menu-bar--display-line-numbers-mode-absolute))
+   ))
 (defun emax-sh (command)
   "Run `start-process-shell-command' with COMMAND.
 NAME   set to \"sh:COMMAND\"
@@ -387,7 +399,9 @@ BUFFER set to \"bf:COMMAND\"
     (start-process-shell-command name buff command)
     (display-buffer buff)))
 ;;;
+(defvar help-quick-0 help-quick-sections "Default help quick.")
 (load (cfg/path "data/help-quick-custom"))
+(setq help-quick-sections help-quick-1)
 ;;; load profile
 (load (cfg/path (format "init/init-%s" cfg/profile)))
 

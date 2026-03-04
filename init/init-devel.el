@@ -46,6 +46,10 @@
 
   )
 
+(use-package project :ensure nil
+  :custom
+  (project-vc-extra-root-markers (list ".dir-locals.el" "Makefile" "Justfile")))
+
 ;; (use-package desktop
 ;;   :ensure nil
 ;;   :custom
@@ -61,6 +65,7 @@
 (use-package dired
   :ensure nil
   :delight "Dir"
+  :bind (:map dired-mode-map ("SPC" . dired-up-directory))
   :custom
   (dired-kill-when-opening-new-dired-buffer t)
   ;; (dired-omit-files "^\\..*$") ; Omit the dotfiles
@@ -108,7 +113,6 @@
 (use-package org
   :ensure nil
   :pin manual
-  :defer t
   :hook  (org-mode . cfg//hook--org-mode)
   :init
   (defun cfg//hook--org-mode ()
@@ -129,16 +133,25 @@
   (org-hide-emphasis-markers t)
   (org-startup-with-inline-images t) ; show inline images
   (org-return-follows-link t) ; follow by links of RET
+  ;; todo
   (org-todo-keywords
    '((sequence "TODO(t)" "WORK(g)" "WAIT(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")))
+  (org-log-done 'time)
+  (org-lowest-priority ?E)
+  (org-default-priority ?C)
   ;; agenda
   (org-agenda-files (list (concat org-directory "/agenda")))
+  ;; babel
   (org-confirm-babel-evaluate nil)
+  (org-babel-min-lines-for-block-output 0)
+  ;; (org-babel-default-header-args:shell '((:session . "none") (:results . "output")
+  ;;                                        (:exports . "code")  (:cache . "no")
+  ;;                                        (:noweb . "no") (:hlines . "no")
+  ;;                                        (:tangle . "no")))
   :config
   (add-to-list 'org-src-lang-modes
                (cons "D" 'd)
                (cons "conf-unix" 'conf-unix))
-  ;; (setq org-confirm-babel-evaluate nil)
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((emacs-lisp . t)
@@ -165,7 +178,7 @@
               ("C-c r e" . 'treesit-end-of-defun))
   :hook (ruby-base-mode . subword-mode)
   :custom (ruby-indent-level 2)
-          (ruby-indent-tabs-mode nil))
+  (ruby-indent-tabs-mode nil))
 (use-package term
   :ensure nil
   :commands term
@@ -232,24 +245,24 @@
   ;; Bind dedicated completion commands
   ;; Alternative prefix keys: C-c p, M-p, M-+, ...
   :bind (("C-c p p" . completion-at-point) ;; capf
-	 ("C-c p t" . complete-tag)        ;; etags
-	 ("C-c p d" . cape-dabbrev)        ;; or dabbrev-completion
-	 ("C-c p h" . cape-history)
-	 ("C-c p f" . cape-file)
-	 ("C-c p k" . cape-keyword)
-	 ("C-c p s" . cape-elisp-symbol)
-	 ("C-c p e" . cape-elisp-block)
-	 ("C-c p a" . cape-abbrev)
-	 ("C-c p l" . cape-line)
-	 ("C-c p w" . cape-dict)
-	 ("C-c p :" . cape-emoji)
-	 ("C-c p \\" . cape-tex)
-	 ("C-c p _" . cape-tex)
-	 ("C-c p ^" . cape-tex)
-	 ("C-c p &" . cape-sgml)
-	 ("C-c p r" . cape-rfc1345)
-     ;; ("M-;" . completion-at-point)
-     )
+	     ("C-c p t" . complete-tag)        ;; etags
+	     ("C-c p d" . cape-dabbrev)        ;; or dabbrev-completion
+	     ("C-c p h" . cape-history)
+	     ("C-c p f" . cape-file)
+	     ("C-c p k" . cape-keyword)
+	     ("C-c p s" . cape-elisp-symbol)
+	     ("C-c p e" . cape-elisp-block)
+	     ("C-c p a" . cape-abbrev)
+	     ("C-c p l" . cape-line)
+	     ("C-c p w" . cape-dict)
+	     ("C-c p :" . cape-emoji)
+	     ("C-c p \\" . cape-tex)
+	     ("C-c p _" . cape-tex)
+	     ("C-c p ^" . cape-tex)
+	     ("C-c p &" . cape-sgml)
+	     ("C-c p r" . cape-rfc1345)
+         ;; ("M-;" . completion-at-point)
+         )
   :init
   ;; Add to the global default value of `completion-at-point-functions' which is
   ;; used by `completion-at-point'.  The order of the functions matters, the
@@ -267,65 +280,65 @@
   (add-to-list 'completion-at-point-functions #'cape-dict)
   ;;(add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
   ;;(add-to-list 'completion-at-point-functions #'cape-line)
-)
+  )
 ;; Example configuration for Consult
 (use-package consult
   :ensure t
   :pin gnu
   ;; Replace bindings. Lazily loaded due by `use-package'.
   :bind (;; C-c bindings in `mode-specific-map'
-	 ("C-c M-x" . consult-mode-command)
-	 ("C-c h" . consult-history)
-	 ("C-c k" . consult-kmacro)
-	 ("C-c m" . consult-man)
-	 ("C-c i" . consult-info)
-     ("C-s" . consult-line)
-	 ([remap Info-search] . consult-info)
-	 ;; C-x bindings in `ctl-x-map'
-	 ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
-	 ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
-	 ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
-	 ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
-	 ("C-x t b" . consult-buffer-other-tab)    ;; orig. switch-to-buffer-other-tab
-	 ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
-	 ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
-	 ;; Custom M-# bindings for fast register access
-	 ("M-#" . consult-register-load)
-	 ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
-	 ("C-M-#" . consult-register)
-	 ;; Other custom bindings
-	 ("M-y" . consult-yank-pop)                ;; orig. yank-pop
-	 ;; M-g bindings in `goto-map'
-	 ("M-g e" . consult-compile-error)
-	 ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
-	 ("M-g g" . consult-goto-line)             ;; orig. goto-line
-	 ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
-	 ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
-	 ("M-g m" . consult-mark)
-	 ("M-g k" . consult-global-mark)
-	 ("M-g i" . consult-imenu)
-	 ("M-g I" . consult-imenu-multi)
-	 ;; M-s bindings in `search-map'
-	 ("M-s d" . consult-find)                  ;; Alternative: consult-fd
-	 ("M-s c" . consult-locate)
-	 ("M-s g" . consult-grep)
-	 ("M-s G" . consult-git-grep)
-	 ("M-s r" . consult-ripgrep)
-	 ("M-s l" . consult-line)
-	 ("M-s L" . consult-line-multi)
-	 ("M-s k" . consult-keep-lines)
-	 ("M-s u" . consult-focus-lines)
-	 ;; Isearch integration
-	 ("M-s e" . consult-isearch-history)
-	 :map isearch-mode-map
-	 ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
-	 ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
-	 ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
-	 ("M-s L" . consult-line-multi)            ;; needed by consult-line to detect isearch
-	 ;; Minibuffer history
-	 :map minibuffer-local-map
-	 ("M-s" . consult-history)                 ;; orig. next-matching-history-element
-	 ("M-r" . consult-history))                ;; orig. previous-matching-history-element
+	     ("C-c M-x" . consult-mode-command)
+	     ("C-c h" . consult-history)
+	     ("C-c k" . consult-kmacro)
+	     ("C-c m" . consult-man)
+	     ("C-c i" . consult-info)
+         ("C-s" . consult-line)
+	     ([remap Info-search] . consult-info)
+	     ;; C-x bindings in `ctl-x-map'
+	     ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
+	     ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
+	     ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
+	     ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+	     ("C-x t b" . consult-buffer-other-tab)    ;; orig. switch-to-buffer-other-tab
+	     ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
+	     ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
+	     ;; Custom M-# bindings for fast register access
+	     ("M-#" . consult-register-load)
+	     ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+	     ("C-M-#" . consult-register)
+	     ;; Other custom bindings
+	     ("M-y" . consult-yank-pop)                ;; orig. yank-pop
+	     ;; M-g bindings in `goto-map'
+	     ("M-g e" . consult-compile-error)
+	     ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
+	     ("M-g g" . consult-goto-line)             ;; orig. goto-line
+	     ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
+	     ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
+	     ("M-g m" . consult-mark)
+	     ("M-g k" . consult-global-mark)
+	     ("M-g i" . consult-imenu)
+	     ("M-g I" . consult-imenu-multi)
+	     ;; M-s bindings in `search-map'
+	     ("M-s d" . consult-find)                  ;; Alternative: consult-fd
+	     ("M-s c" . consult-locate)
+	     ("M-s g" . consult-grep)
+	     ("M-s G" . consult-git-grep)
+	     ("M-s r" . consult-ripgrep)
+	     ("M-s l" . consult-line)
+	     ("M-s L" . consult-line-multi)
+	     ("M-s k" . consult-keep-lines)
+	     ("M-s u" . consult-focus-lines)
+	     ;; Isearch integration
+	     ("M-s e" . consult-isearch-history)
+	     :map isearch-mode-map
+	     ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
+	     ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
+	     ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
+	     ("M-s L" . consult-line-multi)            ;; needed by consult-line to detect isearch
+	     ;; Minibuffer history
+	     :map minibuffer-local-map
+	     ("M-s" . consult-history)                 ;; orig. next-matching-history-element
+	     ("M-r" . consult-history))                ;; orig. previous-matching-history-element
 
   ;; Enable automatic preview at point in the *Completions* buffer. This is
   ;; relevant when you use the default completion UI.
@@ -337,13 +350,13 @@
   ;; preview for `consult-register', `consult-register-load',
   ;; `consult-register-store' and the Emacs built-ins.
   (setq register-preview-delay 0.5
-	register-preview-function #'consult-register-format)
+	    register-preview-function #'consult-register-format)
   ;; Optionally tweak the register preview window.
   ;; This adds thin lines, sorting and hides the mode line of the window.
   (advice-add #'register-preview :override #'consult-register-window)
   ;; Use Consult to select xref locations with preview
   (setq xref-show-xrefs-function #'consult-xref
-	xref-show-definitions-function #'consult-xref)
+	    xref-show-definitions-function #'consult-xref)
   ;; Configure other variables and modes in the :config section,
   ;; after lazily loading the package.
   :config
@@ -383,10 +396,11 @@
   ;; (setq consult-project-function (lambda (_) (projectile-project-root)))
   ;;;; 5. No project support
   ;; (setq consult-project-function nil)
-)
+  )
 (use-package corfu                      ; popup window for autocomplete
   :ensure t
   :pin gnu
+  :bind (:map corfu-map ("SPC" . corfu-insert-separator))
   :custom
   (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
   (corfu-auto t)                 ;; Enable auto completion
@@ -398,6 +412,7 @@
   ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
   ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
   ;; (corfu-scroll-margin 5)        ;; Use scroll margin
+  (corfu-popupinfo-delay '(0.3 . 0.2))
 
   ;; Enable Corfu only for certain modes.
   ;; :hook ((prog-mode . corfu-mode)
@@ -408,7 +423,9 @@
   ;; be used globally (M-/).  See also the customization variable
   ;; `global-corfu-modes' to exclude certain modes.
   :init
-  (global-corfu-mode))
+  (global-corfu-mode)
+  (corfu-history-mode)
+  (corfu-popupinfo-mode))
 (use-package embark
   :ensure t
   :pin gnu
@@ -435,9 +452,9 @@
 
   ;; Hide the mode line of the Embark live/completions buffers
   (add-to-list 'display-buffer-alist
-	       '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-		 nil
-		 (window-parameters (mode-line-format . none)))))
+	           '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+		         nil
+		         (window-parameters (mode-line-format . none)))))
 (use-package embark-consult
   :ensure t
   :pin gnu
@@ -504,14 +521,15 @@
 ;;     ^------^---^-----^--------------^--^---------------^------^---
 ;;     _q_ quit   _h_ highlight line   _f_ fontaine       _m_ menu
 ;;     ^^         _l_ long line wrap   _g_ golden ratio   _t_ treemacs
-;;     ^^         _w_ whitespaces      _o_ org modern     _T_ tab headers
-;;     _B_ ⌘   ^^                      _p_ paddings       _W_ Win tabs
+;;     ^^         _n_ line numbers     _o_ org modern     _T_ tab headers
+;;     _B_ ⌘      _w_ whitespaces      _p_ paddings       _W_ Win tabs
 ;;     _k_ LLL ^^                      _V_ V. posframe
 ;;     "
 ;;     ("q" nil)
 ;;   
 ;;     ("h" hl-line-mode)
 ;;     ("l" visual-line-mode)
+;;     ("n" cfg/toggle-display-line-numbers)
 ;;     ("w" whitespace-mode)
 ;;   
 ;;     ;; ("f" fontaine-set-preset)
@@ -528,7 +546,42 @@
 ;;   
 ;;     ("B" emax-hk-mode)
 ;;     ("k" killless-mode))
-;;   
+;;   (defhydra hydra--text-scale(:timeout 10)
+;;     "scale text"
+;;     ("i" text-scale-increase "in")
+;;     ("k" text-scale-decrease "out")
+;;     ("q" nil "finished", :exit t))
+;;   (defhydra hydra--window-move(:hint nil)
+;;     "
+;;     ^Window^   ^Manual^         ^Auto^             ^Navigation^
+;;     ^------^---^------^---------^----^-------------^----------^^^^^^-
+;;     _q_ quit   _I_ ↑ increase   _-_ by buffer      ^    _p_
+;;     ^^         _K_ ↓ decrease   _+_ balance          _a_ ✦ _f_
+;;     ^^         _J_ → shrink ←   _g_ golden ratio   ^    _n_
+;;     ^^         _L_ ← expand →   ^^                 ^----------^^^^^^-
+;;     "
+;;     ("I" enlarge-window nil)
+;;     ("K" shrink-window nil)
+;;     ("J" shrink-window-horizontally nil)
+;;     ("L" enlarge-window-horizontally nil)
+;;     ("-" shrink-window-if-larger-than-buffer nil)
+;;     ("+" balance-windows nil)
+;;     ("=" balance-windows nil)
+;;     ("g" golden-ratio)
+;;     ("a" windmove-left nil)
+;;     ("b" windmove-left nil)
+;;     ("p" windmove-up nil)
+;;     ("n" windmove-down nil)
+;;     ("f" windmove-right nil)
+;;     ("e" windmove-right nil)
+;;     ("C-a" windmove-left nil)
+;;     ("C-b" windmove-left nil)
+;;     ("C-p" windmove-up nil)
+;;     ("C-n" windmove-down nil)
+;;     ("C-f" windmove-right nil)
+;;     ("C-e" windmove-right nil)
+;;     ("q" nil)
+;;     )
 ;;   (defhydra hydra--play-games (:hint nil :color blue)
 ;;     "
 ;;     ^
@@ -574,7 +627,7 @@
 ;;   (keymap-set cfg-hk/major-map "t" '("toggle" . hydra--toggle-mode/body))
 ;;   
 ;;   (keymap-global-set "M-O" 'hydra--window-move/body); window move
-;; )
+;;   )
 ;; (use-package ace-window
 ;;   :ensure t
 ;;   :pin gnu
@@ -626,14 +679,15 @@
     ^------^---^-----^--------------^--^---------------^------^---
     _q_ quit   _h_ highlight line   _f_ fontaine       _m_ menu
     ^^         _l_ long line wrap   _g_ golden ratio   _t_ treemacs
-    ^^         _w_ whitespaces      _o_ org modern     _T_ tab headers
-    _B_ ⌘   ^^                      _p_ paddings       _W_ Win tabs
+    ^^         _n_ line numbers     _o_ org modern     _T_ tab headers
+    _B_ ⌘      _w_ whitespaces      _p_ paddings       _W_ Win tabs
     _k_ LLL ^^                      _V_ V. posframe
     "
     ("q" nil)
   
     ("h" hl-line-mode)
     ("l" visual-line-mode)
+    ("n" cfg/toggle-display-line-numbers)
     ("w" whitespace-mode)
   
     ;; ("f" fontaine-set-preset)
@@ -650,7 +704,42 @@
   
     ("B" emax-hk-mode)
     ("k" killless-mode))
-  
+  (defhydra hydra--text-scale(:timeout 10)
+    "scale text"
+    ("i" text-scale-increase "in")
+    ("k" text-scale-decrease "out")
+    ("q" nil "finished", :exit t))
+  (defhydra hydra--window-move(:hint nil)
+    "
+    ^Window^   ^Manual^         ^Auto^             ^Navigation^
+    ^------^---^------^---------^----^-------------^----------^^^^^^-
+    _q_ quit   _I_ ↑ increase   _-_ by buffer      ^    _p_
+    ^^         _K_ ↓ decrease   _+_ balance          _a_ ✦ _f_
+    ^^         _J_ → shrink ←   _g_ golden ratio   ^    _n_
+    ^^         _L_ ← expand →   ^^                 ^----------^^^^^^-
+    "
+    ("I" enlarge-window nil)
+    ("K" shrink-window nil)
+    ("J" shrink-window-horizontally nil)
+    ("L" enlarge-window-horizontally nil)
+    ("-" shrink-window-if-larger-than-buffer nil)
+    ("+" balance-windows nil)
+    ("=" balance-windows nil)
+    ("g" golden-ratio)
+    ("a" windmove-left nil)
+    ("b" windmove-left nil)
+    ("p" windmove-up nil)
+    ("n" windmove-down nil)
+    ("f" windmove-right nil)
+    ("e" windmove-right nil)
+    ("C-a" windmove-left nil)
+    ("C-b" windmove-left nil)
+    ("C-p" windmove-up nil)
+    ("C-n" windmove-down nil)
+    ("C-f" windmove-right nil)
+    ("C-e" windmove-right nil)
+    ("q" nil)
+    )
   (defhydra hydra--play-games (:hint nil :color blue)
     "
     ^
@@ -696,7 +785,7 @@
   (keymap-set cfg-hk/major-map "t" '("toggle" . hydra--toggle-mode/body))
   
   (keymap-global-set "M-O" 'hydra--window-move/body); window move
-)
+  )
 (use-package yasnippet
   :ensure t
   :pin gnu
@@ -711,9 +800,9 @@
     )
   :config
   (setq yas-snippet-dirs
-      (list (cfg/path "data/snippets") ; personal snippets
-            yasnippet-snippets-dir
-        ))
+        (list (cfg/path "data/snippets") ; personal snippets
+              yasnippet-snippets-dir
+              ))
   (yas-reload-all)
   (which-key-add-key-based-replacements "C-c &" "Yas")
   :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
@@ -770,27 +859,84 @@
   :init
   (keymap-set cfg-hk/open-entities-map "t" '("timers" . tmr-tabulated-view))
   :config
+  (tmr-mode-line-mode 1)
+  (setq tmr-mode-line-max-timers 1)
   (setq tmr-sound-file (cfg/path "data/sound/alert.ogg")))
 ;;;;; org
 (use-package org-modern
   :ensure t
   :pin gnu
-  :if (display-graphic-p)
+  ;; :if (display-graphic-p)
   :after org
   :custom
   (org-modern-replace-stars "◉○✦✧▪▫º") ; ◉○✦✧▪▫º ⦿◎◉○✳
   (org-modern-star 'replace)
   :config
   ;; Option 1: Per buffer
-  (add-hook 'org-mode-hook #'org-modern-mode)
-  (add-hook 'org-agenda-finalize-hook #'org-modern-agenda)
+  ;; (add-hook 'org-mode-hook #'org-modern-mode)
+  ;; (add-hook 'org-agenda-finalize-hook #'org-modern-agenda)
   ;; Option 2: Globally
-  ;; (with-eval-after-load 'org (global-org-modern-mode))
+  (with-eval-after-load 'org (global-org-modern-mode))
   )
 (use-package htmlize
   :ensure t
   :pin nongnu)
 ;;;;; files
+;;;;; windows
+(use-package popper
+  :ensure t
+  :pin gnu
+  :bind (:map cfg-hk/agile-map
+              ("C-;"   . popper-toggle)
+              ("SPC k" . popper-kill-latest-popup)
+              ("SPC t" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          "\\*Compile-Log\\*"
+          bookmark-bmenu-mode           ; "\\*Bookmark List\\*"
+          help-mode
+          tmr-tabulated-mode
+          emacs-lisp-compilation-mode
+          flycheck-error-message-mode
+          compilation-mode))
+  (popper-mode +1)
+  (popper-echo-mode +1)                 ; For echo area hints
+  :config
+  (which-key-add-key-based-replacements "C-; SPC" "popper"))
+(use-package treemacs
+  :ensure t
+  :requires (ace-window hydra)
+  :after (ace-window hydra)
+  :defer t
+  :init
+
+  :bind (:map cfg-hk/agile-map
+              ("t" . treemacs)
+              ("C-t" . treemacs-select-window))
+  :custom
+  (treemacs-show-hidden-files t)
+  (treemacs-persist-file (cfg/path-u ".cache/treemacs-persist"))
+  :config
+  (treemacs-follow-mode t)
+  (treemacs-filewatch-mode t)
+  (treemacs-fringe-indicator-mode nil)
+  (treemacs-git-mode 'simple)
+  (treemacs-hide-gitignored-files-mode t)
+  (treemacs-project-follow-mode t)
+  (treemacs-filewatch-mode t)
+
+  (which-key-add-key-based-replacements "C-c C-p" "treemacs prj")
+  (which-key-add-key-based-replacements "C-c C-p c" "collapse")
+  (which-key-add-key-based-replacements "C-c C-w" "treemacs wsp"))
+(use-package treemacs-magit
+  :ensure t
+  :defer t
+  :after (treemacs magit)
+  :requires (treemacs magit)
+  )
 ;;;;; ui
 (use-package fontaine
   :ensure t
@@ -870,52 +1016,68 @@
            :right-divider-width 30
            :scroll-bar-width 8
            :fringe-width 8)))
-(use-package all-the-icons
-  :ensure t
-  :if (display-graphic-p)
-  )
-(use-package all-the-icons-dired
-  :ensure t
-  :if (display-graphic-p)
-  :hook (dired-mode . all-the-icons-dired-mode))
 (use-package ef-themes
   :ensure t
   :pin gnu)
-(use-package treemacs
-  :ensure t
-  :requires (ace-window hydra)
-  :after (ace-window hydra)
-  :defer t
-  :init
-  (use-package treemacs-all-the-icons
-    :ensure t
-    :requires (treemacs all-the-icons)
-    :if (display-graphic-p)
-    )
-  :bind (:map cfg-hk/agile-map
-              ("t" . treemacs)
-              ("C-t" . treemacs-select-window))
-  :custom
-  (treemacs-show-hidden-files t)
-  (treemacs-persist-file (cfg/path-u ".cache/treemacs-persist"))
-  :config
-  (treemacs-follow-mode t)
-  (treemacs-filewatch-mode t)
-  (treemacs-fringe-indicator-mode nil)
-  (treemacs-git-mode 'simple)
-  (treemacs-hide-gitignored-files-mode t)
-  (treemacs-project-follow-mode t)
-  (treemacs-filewatch-mode t)
 
-  (which-key-add-key-based-replacements "C-c C-p" "treemacs prj")
-  (which-key-add-key-based-replacements "C-c C-p c" "collapse")
-  (which-key-add-key-based-replacements "C-c C-w" "treemacs wsp"))
-(use-package treemacs-magit
+(use-package nerd-icons                 ; melpa-stable
   :ensure t
-  :defer t
-  :after (treemacs magit)
-  :requires (treemacs magit)
+  ;; :custom
+  ;; The Nerd Font you want to use in GUI
+  ;; "Symbols Nerd Font Mono" is the default and is recommended
+  ;; but you can use any other Nerd Font if you want
+  ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
+  :config
+  (add-to-list 'nerd-icons-extension-icon-alist
+               '("license" nerd-icons-faicon "nf-fa-book" :face nerd-icons-green))
   )
+(use-package nerd-icons-dired           ; melpa-stable
+  :ensure t
+  :delight
+  :hook
+  (dired-mode . nerd-icons-dired-mode))
+(use-package treemacs-nerd-icons        ; melpa-stable not upgraded
+  :ensure t
+  :pin melpa
+  :config
+  (treemacs-nerd-icons-config))
+(defun cfg//setup--dashboard-icons ()
+  "Configure dashboard."
+  (setq dashboard-icon-type 'nerd-icons)
+  (setq dashboard-heading-icons '((recents   . "nf-oct-history")
+                                  (bookmarks . "nf-oct-bookmark")
+                                  (agenda    . "nf-oct-calendar")
+                                  (projects  . "nf-oct-rocket")
+                                  (registers . "nf-oct-database")))
+  (setq dashboard-set-heading-icons t)
+  (setq dashboard-set-file-icons t))
+(use-package nerd-icons-corfu :ensure t ; melpa-stable
+  :config
+  (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)
+  ;; Optionally:
+  ;; (setq nerd-icons-corfu-mapping
+  ;;       '((array :style "cod" :icon "symbol_array" :face font-lock-type-face)
+  ;;         (boolean :style "cod" :icon "symbol_boolean" :face font-lock-builtin-face)
+  ;;         ;; You can alternatively specify a function to perform the mapping,
+  ;;         ;; use this when knowing the exact completion candidate is important.
+  ;;         ;; Don't pass `:face' if the function already returns string with the
+  ;;         ;; face property, though.
+  ;;         (file :fn nerd-icons-icon-for-file :face font-lock-string-face)
+  ;;         ;; ...
+  ;;         (t :style "cod" :icon "code" :face font-lock-warning-face)))
+  ;; If you add an entry for t, the library uses that as fallback.
+  ;; The default fallback (when it's not specified) is the ? symbol.
+
+  ;; The Custom interface is also supported for tuning the variable above.
+  )
+(use-package nerd-icons-mode-line       ; github
+  :ensure t
+  :vc (:url "https://github.com/grolongo/nerd-icons-mode-line")
+  :custom
+  (nerd-icons-mode-line-v-adjust 0.1) ; default value
+  (nerd-icons-mode-line-size 1.0) ; default value
+  :config (nerd-icons-mode-line-global-mode t))
+
 (use-package mines
   :ensure t
   :pin gnu
@@ -929,30 +1091,12 @@
 ;;;;;
 
 ;;;
-;;; role--experimental
-;;;
-(use-package popper
-  :ensure t
-  :pin gnu
-  :bind (:map cfg-hk/agile-map
-              ("C-;"   . popper-toggle)
-              ("SPC k"   . popper-kill-latest-popup)
-              ("RET" . popper-toggle-type))
-  :init
-  (setq popper-reference-buffers
-        '("\\*Messages\\*"
-          "Output\\*$"
-          "\\*Async Shell Command\\*"
-          "\\*Compile-Log\\*"
-          help-mode
-          emacs-lisp-compilation-mode
-          flycheck-error-message-mode
-          compilation-mode))
-  (popper-mode +1)
-  (popper-echo-mode +1))                ; For echo area hints
-;;;
 ;;; role--yard-of-test
 ;;;
+;; (setq winner-ring-size 10)              ; default 200
+;; (use-package dirvish
+;;   :ensure t
+;;   :pin nongnu)
 (use-package flycheck
   :ensure t
   :hook (after-init . global-flycheck-mode)
@@ -1003,19 +1147,16 @@
                           (projects  . 5)
                           (agenda    . 5)
                           (registers . 5)))
-  ;; (when (display-graphic-p)
-  (setq dashboard-icon-type 'all-the-icons)
-  (setq dashboard-heading-icons '((recents   . "history")
-                                  (bookmarks . "bookmark")
-                                  (agenda    . "calendar")
-                                  (projects  . "rocket")
-                                  (registers . "database")))
-  (setq dashboard-set-heading-icons t)
-  (setq dashboard-set-file-icons t)
-    ;; )
+  (cfg//setup--dashboard-icons)
 
   (add-hook 'server-after-make-frame-hook 'dashboard-open)
   (dashboard-setup-startup-hook))
+;; (use-package projectile
+;;   :bind
+;;   ("C-x p" . projectile-command-map)
+;;   :config
+;;   (projectile-mode 1)
+;;   (add-to-list 'projectile-globally-ignored-directories "node_modules"))
 
 (provide 'init-devel)
 ;;; init-devel.el ends here

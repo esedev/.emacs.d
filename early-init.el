@@ -56,8 +56,11 @@
 (defvar cfg/job (getenv "EMAX_JOB") "Job identity, type string.")
 (defvar cfg/directory user-emacs-directory "Path to config directory.")
 (defvar cfg/frame-title (format "%s%s☀%s" cfg/profile
-                                (if cfg/job (concat "-" cfg/job) "")
-                                system-name) "Emacs frame title.")
+                                (if cfg/job (concat "-" cfg/job) "") system-name)
+  "Emacs frame title.")
+(defun cfg/verbose-p ()
+  "Return t if emacs runned with option --u-v=1."
+  (string-equal "1" (getenv "EMAX_V")))
 
 ;;;;; paths for clean and order
 (defun cfg/path (arg)                   ; ~/.config/emacs/$arg
@@ -93,7 +96,7 @@
 (setq gc-cons-threshold (* 64 1024 1024)) ; run gc after threshold
 (setq read-process-output-max (* 1 1024 1024)) ; performance with language servers
 (setenv "LSP_USE_PLISTS" "true") ; tree-sitter performance enhancement
-;; (setq lsp-use-plists t)          ;
+(setq lsp-use-plists t)          ;
 
 ;;;;;
 (setq package-enable-at-startup nil)    ; must be called explicitly (package-initialize)

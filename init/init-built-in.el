@@ -46,6 +46,10 @@
 
   )
 
+(use-package project :ensure nil
+  :custom
+  (project-vc-extra-root-markers (list ".dir-locals.el" "Makefile" "Justfile")))
+
 ;; (use-package desktop
 ;;   :ensure nil
 ;;   :custom
@@ -61,6 +65,7 @@
 (use-package dired
   :ensure nil
   :delight "Dir"
+  :bind (:map dired-mode-map ("SPC" . dired-up-directory))
   :custom
   (dired-kill-when-opening-new-dired-buffer t)
   ;; (dired-omit-files "^\\..*$") ; Omit the dotfiles
@@ -108,7 +113,6 @@
 (use-package org
   :ensure nil
   :pin manual
-  :defer t
   :hook  (org-mode . cfg//hook--org-mode)
   :init
   (defun cfg//hook--org-mode ()
@@ -129,16 +133,25 @@
   (org-hide-emphasis-markers t)
   (org-startup-with-inline-images t) ; show inline images
   (org-return-follows-link t) ; follow by links of RET
+  ;; todo
   (org-todo-keywords
    '((sequence "TODO(t)" "WORK(g)" "WAIT(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")))
+  (org-log-done 'time)
+  (org-lowest-priority ?E)
+  (org-default-priority ?C)
   ;; agenda
   (org-agenda-files (list (concat org-directory "/agenda")))
+  ;; babel
   (org-confirm-babel-evaluate nil)
+  (org-babel-min-lines-for-block-output 0)
+  ;; (org-babel-default-header-args:shell '((:session . "none") (:results . "output")
+  ;;                                        (:exports . "code")  (:cache . "no")
+  ;;                                        (:noweb . "no") (:hlines . "no")
+  ;;                                        (:tangle . "no")))
   :config
   (add-to-list 'org-src-lang-modes
                (cons "D" 'd)
                (cons "conf-unix" 'conf-unix))
-  ;; (setq org-confirm-babel-evaluate nil)
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((emacs-lisp . t)
@@ -165,7 +178,7 @@
               ("C-c r e" . 'treesit-end-of-defun))
   :hook (ruby-base-mode . subword-mode)
   :custom (ruby-indent-level 2)
-          (ruby-indent-tabs-mode nil))
+  (ruby-indent-tabs-mode nil))
 (use-package term
   :ensure nil
   :commands term
@@ -227,10 +240,9 @@
   :ensure nil
   :custom
   (flymake-no-changes-timeout 1.2))
-  ;; :hook((emacs-lisp-mode . flymake-mode)))
+;; :hook((emacs-lisp-mode . flymake-mode)))
 (use-package eglot
   :ensure nil
-  :defer t
   :init
   (defun cfg//manually-activate-flymake ()
     (add-hook 'flymake-diagnostic-functions #'eglot-flymake-backend nil t)
