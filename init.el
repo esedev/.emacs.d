@@ -249,12 +249,8 @@
                                    (alist-get cfg/profile cfg/theme-profile-tags)
                                    'None)) t)
 ;;; customize
-(defun cfg/yard (&optional arg) (expand-file-name (or arg "") "~/sync/yard"))
-(defun cfg/shelf (&optional arg) (expand-file-name (or arg "") "~/sync/shelf"))
-(defun cfg/org (&optional arg) (expand-file-name (or arg "") "~/sync/shelf/org-arium"))
-(custom-set-variables
- '(calendar-date-style 'european)
- '(diary-file (cfg/shelf "diary")))
+(defun cfg/org (&optional arg) (expand-file-name (or arg "") "~/org"))
+(load (cfg/path-s "custom-user-env") 'noerror)
 (if (file-exists-p custom-file)
     (load custom-file)
   (progn

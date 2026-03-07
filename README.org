@@ -6,19 +6,35 @@ This is my personal Emacs configuration.
 Emacs 30 is required. The configuration uses several launch profiles for experimenting with *Emacs* configuration.
 
 * Installation
-+ clone git repository
-  #+begin_src shell
+clone git repository
+#+begin_src shell
 git clone https://github.com/esedev/.emacs.d.git
-   #+end_src
-+ move repo to '~/.config/emacs' (*!WARGING: dont't forget make backup*)
-+ copy emacs-runner.sh to /usr/lobal/bin (*optional*)
-  #+begin_src shell
+#+end_src
+move repo to '~/.config/emacs' (*!WARGING: dont't forget make backup*)
+copy [[file:scripts/emacs-runner.sh][scripts/emacs-runner.sh]] to one of ~$PATH~ directory (*optional*)
+#+begin_src shell
 cp scripts/emacs-runner.sh /usr/local/bin/emax
-  #+end_src
-+ run the command to add a line to the ~/.bashrc (*optional*)
-        #+begin_src shell
+#+end_src
+run the command to add a line to the ~/.bashrc (*optional*)
+#+begin_src shell
 echo ". \$HOME/.config/emacs/scripts/emacs-env" >> ~/.bashrc
-  #+end_src
+#+end_src
+
+* Third party
++ the configuration uses a package [[https://github.com/rainstormstudio/nerd-icons.el][nerd-icons]], you need to install additional fonts [[https://www.nerdfonts.com/][nerd-fonts]] (*optional*)
++ also i'm install the emacs-w3m system package
+
+* Flatpak Emacs
+copy scripts for running emacs [[file:scripts/flat-emacs.sh][scripts/flat-emacs.sh]] and [[file:scripts/flat-emacsclient.sh][scripts/flat-emacsclient.sh]] to one of ~$PATH~ directory
+#+begin_src shell
+cp scripts/flat-emacs.sh /usr/local/bin/emacs
+cp scripts/flat-emacsclient.sh /usr/local/bin/emacsclient
+#+end_src
+My version of Emax from flatpack looks for its configuration only in ~/.emacs.d , so if your configuration is in ~/.config/emacs, just make a symlink
+#+begin_src shell
+cd $HOME
+ln -s .config/emacs .emacs.d
+#+end_src
 
 * Upgrade all packages
 + =<M-x>= package-list-packages

@@ -1,0 +1,7 @@
+# key: /tt
+# name: org-title
+# --
+#+TITLE: ${1:title}
+#+AUTHOR: Serg E
+#+DATE: `(format-time-string "%+4Y-%m-%d")`
+$0

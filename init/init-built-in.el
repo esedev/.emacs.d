@@ -137,8 +137,6 @@
   (org-todo-keywords
    '((sequence "TODO(t)" "WORK(g)" "WAIT(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")))
   (org-log-done 'time)
-  (org-lowest-priority ?E)
-  (org-default-priority ?C)
   ;; agenda
   (org-agenda-files (list (concat org-directory "/agenda")))
   ;; babel
@@ -149,6 +147,8 @@
   ;;                                        (:noweb . "no") (:hlines . "no")
   ;;                                        (:tangle . "no")))
   :config
+  (setq org-lowest-priority ?E
+        org-default-priority ?C)
   (add-to-list 'org-src-lang-modes
                (cons "D" 'd)
                (cons "conf-unix" 'conf-unix))

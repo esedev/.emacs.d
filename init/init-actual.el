@@ -137,8 +137,6 @@
   (org-todo-keywords
    '((sequence "TODO(t)" "WORK(g)" "WAIT(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")))
   (org-log-done 'time)
-  (org-lowest-priority ?E)
-  (org-default-priority ?C)
   ;; agenda
   (org-agenda-files (list (concat org-directory "/agenda")))
   ;; babel
@@ -149,6 +147,8 @@
   ;;                                        (:noweb . "no") (:hlines . "no")
   ;;                                        (:tangle . "no")))
   :config
+  (setq org-lowest-priority ?E
+        org-default-priority ?C)
   (add-to-list 'org-src-lang-modes
                (cons "D" 'd)
                (cons "conf-unix" 'conf-unix))
@@ -637,6 +637,7 @@
   :pin gnu
   :delight (yas-minor-mode " Ya")
   :defer t
+  :bind (:map cfg-hk/craft-map ("y" . yas-insert-snippet))
   :init
   (use-package yasnippet-snippets
     :ensure t
@@ -645,6 +646,7 @@
     :after yasnippet
     )
   :config
+  (add-to-list 'warning-suppress-types '(yasnippet backquote-change))
   (setq yas-snippet-dirs
         (list (cfg/path "data/snippets") ; personal snippets
               yasnippet-snippets-dir

@@ -618,8 +618,6 @@ BUFFER set to \"bf:COMMAND\"
   (org-todo-keywords
    '((sequence "TODO(t)" "WORK(g)" "WAIT(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")))
   (org-log-done 'time)
-  (org-lowest-priority ?E)
-  (org-default-priority ?C)
   ;; agenda
   (org-agenda-files (list (concat org-directory "/agenda")))
   ;; babel
@@ -630,6 +628,8 @@ BUFFER set to \"bf:COMMAND\"
   ;;                                        (:noweb . "no") (:hlines . "no")
   ;;                                        (:tangle . "no")))
   :config
+  (setq org-lowest-priority ?E
+        org-default-priority ?C)
   (add-to-list 'org-src-lang-modes
                (cons "D" 'd)
                (cons "conf-unix" 'conf-unix))
@@ -1149,7 +1149,6 @@ BUFFER set to \"bf:COMMAND\"
 (use-package org-modern
   :ensure t
   :pin gnu
-  ;; :if (display-graphic-p)
   :after org
   :custom
   (org-modern-replace-stars "◉○✦✧▪▫º") ; ◉○✦✧▪▫º ⦿◎◉○✳
@@ -1321,6 +1320,7 @@ BUFFER set to \"bf:COMMAND\"
   :pin gnu
   :delight (yas-minor-mode " Ya")
   :defer t
+  :bind (:map cfg-hk/craft-map ("y" . yas-insert-snippet))
   :init
   (use-package yasnippet-snippets
     :ensure t
@@ -1329,6 +1329,7 @@ BUFFER set to \"bf:COMMAND\"
     :after yasnippet
     )
   :config
+  (add-to-list 'warning-suppress-types '(yasnippet backquote-change))
   (setq yas-snippet-dirs
         (list (cfg/path "data/snippets") ; personal snippets
               yasnippet-snippets-dir
@@ -1950,12 +1951,8 @@ BUFFER set to \"bf:COMMAND\"
 * cstm--user-env
 #+name: cstm--user-env
 #+begin_src emacs-lisp :results silent
-(defun cfg/yard (&optional arg) (expand-file-name (or arg "") "~/sync/yard"))
-(defun cfg/shelf (&optional arg) (expand-file-name (or arg "") "~/sync/shelf"))
-(defun cfg/org (&optional arg) (expand-file-name (or arg "") "~/sync/shelf/org-arium"))
-(custom-set-variables
- '(calendar-date-style 'european)
- '(diary-file (cfg/shelf "diary")))
+(defun cfg/org (&optional arg) (expand-file-name (or arg "") "~/org"))
+(load (cfg/path-s "custom-user-env") 'noerror)
 #+end_src
 * cstm--default
 #+name: cstm--default
