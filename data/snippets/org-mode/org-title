@@ -1,7 +1,8 @@
-# key: /tt
+# key: -ot
 # name: org-title
 # --
 #+TITLE: ${1:title}
 #+AUTHOR: Serg E
-#+DATE: `(format-time-string "%+4Y-%m-%d")`
-$0
+#+DATE: `(format-time-string (org-time-stamp-format nil t) (current-time))`
+
+* $0

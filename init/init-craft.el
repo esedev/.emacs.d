@@ -714,7 +714,6 @@
 (use-package org-modern
   :ensure t
   :pin gnu
-  ;; :if (display-graphic-p)
   :after org
   :custom
   (org-modern-replace-stars "◉○✦✧▪▫º") ; ◉○✦✧▪▫º ⦿◎◉○✳

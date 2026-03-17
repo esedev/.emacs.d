@@ -53,7 +53,7 @@
 (defun cfg/path-s (arg)                 ; ~/.config/emacs/save/$arg
   (cfg/path (concat "save/" arg)))
 
-(setq user-emacs-directory (cfg/path "target"))
+(setq user-emacs-directory (expand-file-name "var/emacs" "~/.local"))
 
 (defun cfg/path-u (arg)                 ; ~/.config/emacs/target/$arg
   "Return full path file ARG in `user-emacs-directory'."
